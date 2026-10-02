@@ -1,0 +1,301 @@
+/* Enchanted Forest Custom Styles - Eye-Safe Soft Pastel Theme */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --color-forest-deep: #fafaf9; /* bg-stone-50 */
+  --color-forest-dark: #f5f5f4; /* bg-stone-100 */
+  --color-forest-emerald: #059669;
+  --color-forest-sage: #10b981;
+  --color-forest-gold: #d97706;
+  --color-fairy-cyan: #0284c7;
+  --color-terracotta: #c86a4b;
+  --color-terracotta-dark: #8f3d23;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #fafaf9; /* calming stone-50 */
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, rgba(204, 251, 241, 0.45) 0%, transparent 60%),
+    radial-gradient(circle at 10% 25%, rgba(254, 243, 199, 0.45) 0%, transparent 40%),
+    radial-gradient(circle at 90% 70%, rgba(240, 253, 250, 0.55) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 100%, #f5f5f4 0%, #fafaf9 100%);
+  background-attachment: fixed;
+  color: #334155; /* text-slate-700: soft dark gray */
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.font-game {
+  font-family: 'Fredoka', cursive, sans-serif;
+}
+
+/* Mirrored Feed Effect for Webcam and Canvas */
+.mirror-feed {
+  transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+}
+
+/* Eye-Safe Soft Pastel Cards */
+.forest-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: 
+    0 10px 25px -5px rgba(15, 23, 42, 0.05),
+    0 4px 12px rgba(15, 23, 42, 0.03);
+}
+
+.forest-card-glow {
+  box-shadow: 
+    0 10px 30px -5px rgba(13, 148, 136, 0.16),
+    0 0 25px rgba(251, 191, 36, 0.18),
+    inset 0 1px 2px rgba(254, 240, 138, 0.4);
+  border-color: rgba(52, 211, 153, 0.55);
+}
+
+/* Calming Soft Floating Fireflies */
+.firefly {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fde68a;
+  box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.45);
+  pointer-events: none;
+  animation: floatFirefly 12s infinite ease-in-out;
+}
+
+@keyframes floatFirefly {
+  0%, 100% {
+    transform: translate(0, 0) scale(0.8);
+    opacity: 0.25;
+  }
+  25% {
+    transform: translate(30px, -40px) scale(1.1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate(-20px, -80px) scale(0.65);
+    opacity: 0.35;
+  }
+  75% {
+    transform: translate(40px, -120px) scale(1.2);
+    opacity: 0.85;
+  }
+}
+
+/* Circular Hold Countdown Progress Ring */
+.progress-ring__circle {
+  transition: stroke-dashoffset 0.1s linear;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* Big Energetic Jump Bounce Animation */
+@keyframes jumpBounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-24px) scale(1.06) rotate(-1deg);
+  }
+  60% {
+    transform: translateY(-6px) scale(0.98) rotate(1deg);
+  }
+  80% {
+    transform: translateY(-14px) scale(1.02);
+  }
+}
+
+.animate-jump {
+  animation: jumpBounce 0.9s infinite ease-in-out;
+}
+
+/* Pop in animation for countdown numbers */
+@keyframes popIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-pop {
+  animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Pulse animation for active elements */
+@keyframes magicalPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.45);
+  }
+}
+
+.magic-pulse {
+  animation: magicalPulse 2s infinite ease-in-out;
+}
+
+/* Bounce in effect for celebration modal */
+@keyframes bounceInModal {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) translateY(30px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-6px);
+  }
+  70% {
+    transform: scale(0.97) translateY(3px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+.bounce-in {
+  animation: bounceInModal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Terracotta Pot Animations for Activity 2: Shoot the Pots */
+@keyframes potHover {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(1deg);
+  }
+}
+
+.animate-pot-hover {
+  animation: potHover 2.6s infinite ease-in-out;
+}
+
+@keyframes potWobble {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-7deg) scale(1.07); }
+  75% { transform: rotate(7deg) scale(1.07); }
+}
+
+.animate-pot-wobble {
+  animation: potWobble 0.25s ease-in-out;
+}
+
+/* Flying Natural Muted Terracotta Shard Particles */
+.pot-shard {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(135deg, #e89574, #c86a4b, #8f3d23);
+  border: 1px solid #fed7aa;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(143, 61, 35, 0.25);
+  pointer-events: none;
+  z-index: 40;
+  transition: all 0.65s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Snapped Word Celebration Glow */
+@keyframes snapWordGlow {
+  0% { transform: scale(0.6); opacity: 0; filter: drop-shadow(0 0 0px #fbbf24); }
+  50% { transform: scale(1.18); opacity: 1; filter: drop-shadow(0 0 25px rgba(245, 158, 11, 0.45)); }
+  100% { transform: scale(1.04); opacity: 1; filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.25)); }
+}
+
+.animate-snap-word {
+  animation: snapWordGlow 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ============================================================
+ * AGE 6-8: SCATTERED FLOATING LETTERS & DRAG-AND-DROP DROP ZONE
+ * ============================================================ */
+.scattered-letter {
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 3px solid #ffffff;
+  box-shadow: 0 8px 18px -2px rgba(143, 61, 35, 0.18), 0 2px 6px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: #451a03;
+  user-select: none;
+  cursor: grab;
+  z-index: 35;
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  animation: floatLetter 3s infinite ease-in-out;
+}
+
+@keyframes floatLetter {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(2deg); }
+}
+
+.scattered-letter.is-grabbed {
+  cursor: grabbing;
+  z-index: 50;
+  animation: none;
+  transform: scale(1.22) rotate(4deg);
+  box-shadow: 
+    0 16px 30px rgba(143, 61, 35, 0.35),
+    0 0 25px rgba(251, 191, 36, 0.7);
+  border-color: #fbbf24;
+  background: linear-gradient(135deg, #fef08a, #fde68a);
+}
+
+/* Drop Zone target slots at bottom of screen */
+.drop-slot {
+  width: 54px;
+  height: 60px;
+  border-radius: 16px;
+  border: 2px dashed rgba(13, 148, 136, 0.5);
+  background: rgba(240, 253, 250, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.drop-slot.is-active-target {
+  border-color: #0d9488;
+  border-style: solid;
+  background: rgba(204, 251, 241, 0.95);
+  transform: scale(1.08);
+  box-shadow: 0 0 16px rgba(13, 148, 136, 0.35);
+}
+
+.drop-slot.is-filled {
+  border-style: solid;
+  border-color: #059669;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.22);
+}
+
+@keyframes bounceInLetter {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-bounce-in {
+  animation: bounceInLetter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

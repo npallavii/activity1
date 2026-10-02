@@ -1,0 +1,13 @@
+{
+  "name": "kids-active-freeze-and-pose",
+  "version": "1.0.0",
+  "description": "Kids Active Game - Freeze & Pose with Google MediaPipe Pose Tracking",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["mediapipe", "pose-tracking", "kids-game", "freeze-and-pose"],
+  "author": "",
+  "license": "MIT"
+}
