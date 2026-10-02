@@ -375,8 +375,9 @@ class FreezeDanceGame {
       console.warn('Camera startup warning:', e);
     }
 
-    // 5. Open Sub-Menu
+    // 5. Open Sub-Menu & speak cute puppy welcome
     this.openModeSelectionModal();
+    voiceEngine.speak("Arf! Let's play together! Pick a game!", { pitch: 1.6, rate: 1.1 });
   }
 
   openModeSelectionModal() {
@@ -563,7 +564,7 @@ class FreezeDanceGame {
       if (this.dom.potsProTip) {
         this.dom.potsProTip.innerHTML = '<strong>Pro Tip:</strong> Break pots to scatter letters! Hover your hand over a letter to grab it and drag it into the bottom slots!';
       }
-      voiceEngine.speak('Shoot the Pots! Swipe to smash the pots, then grab and drag the letters into the slots in order!', { pitch: 1.4, rate: 1.05, volume: 1.0 });
+      voiceEngine.speak("Arf! Smash the pots, then grab and drag the letters in order!", { pitch: 1.6, rate: 1.1 });
     } else {
       this.dom.statusText.textContent = 'Shoot The Pots (Age 4-5): Swipe hands to break pots and auto-spell!';
       this.dom.feedbackText.textContent = 'Swipe your hands across the screen to smash the pots!';
@@ -573,7 +574,7 @@ class FreezeDanceGame {
       if (this.dom.potsProTip) {
         this.dom.potsProTip.innerHTML = '<strong>Pro Tip:</strong> Stand back so your camera sees both hands swiping across the pots!';
       }
-      voiceEngine.speak('Shoot the Pots! Swipe your hands to smash the pots and spell the mystery word!', { pitch: 1.4, rate: 1.05, volume: 1.0 });
+      voiceEngine.speak("Arf! Swipe your paws to smash the pots and auto-spell!", { pitch: 1.6, rate: 1.1 });
     }
 
     this.loadPotWord(this.potWordIndex);
@@ -777,8 +778,12 @@ class FreezeDanceGame {
     const numLetters = currentItem.word.length;
     console.log(`[App] Pot ${index + 1} smashed! Letter '${letter}' (Broken: ${this.potsBrokenCount}/${numLetters})`);
 
-    // Immediate satisfying ceramic crash sound effect
+    // Immediate satisfying ceramic crash sound effect & soft pop
     soundEngine.playPotCrash();
+    soundEngine.playSoftPop();
+
+    // Cheerful puppy voice: "Woof! Broken!"
+    voiceEngine.speak("Woof! Broken!", { pitch: 1.6, rate: 1.1, chime: false });
 
     // Spawn ceramic shards
     this.spawnPotShards(index);
@@ -1033,7 +1038,7 @@ class FreezeDanceGame {
 
     // Advance to next slot in spelling order
     this.nextDropSlotIndex++;
-    voiceEngine.speak(letter, { pitch: 1.4, rate: 1.1, volume: 1.0 });
+    voiceEngine.speak(letter, { pitch: 1.6, rate: 1.1, volume: 1.0, chime: false });
 
     if (this.dom.potsProgressText) {
       this.dom.potsProgressText.textContent = `${this.nextDropSlotIndex} of ${numLetters} Letters Spelled`;
@@ -1090,11 +1095,11 @@ class FreezeDanceGame {
       this.dom.snappedWordBanner.classList.remove('hidden');
     }
 
-    // Web Speech API: phonetic spelling loudly and enthusiastically
+    // Web Speech API: puppy celebration + phonetic spelling
     const titleCasedWord = currentItem.word.charAt(0) + currentItem.word.slice(1).toLowerCase();
-    const phoneticSpelling = `${letters.join(' - ')}... ${titleCasedWord}!`;
-    console.log(`[App] Age 4-5 Word Complete! Speaking: "${phoneticSpelling}"`);
-    voiceEngine.speak(phoneticSpelling, { pitch: 1.4, rate: 0.9, volume: 1.0 });
+    const puppyWinMessage = `Yip yip! You spelled it! High five, buddy! ${letters.join(' - ')}... ${titleCasedWord}!`;
+    console.log(`[App] Age 4-5 Word Complete! Speaking: "${puppyWinMessage}"`);
+    voiceEngine.speak(puppyWinMessage, { pitch: 1.6, rate: 1.1, volume: 1.0 });
 
     // Auto-advance to next word after 3.5s delay
     this.potsNewRoundTimer = setTimeout(() => {
@@ -1137,9 +1142,9 @@ class FreezeDanceGame {
     }
 
     const titleCasedWord = currentItem.word.charAt(0) + currentItem.word.slice(1).toLowerCase();
-    const celebratorySpeech = `Brilliant spelling! ${letters.join(' - ')}... ${titleCasedWord}!`;
+    const celebratorySpeech = `Yip yip! You spelled it! High five, buddy! ${letters.join(' - ')}... ${titleCasedWord}!`;
     console.log(`[App] Age 6-8 Spelled successfully! Speaking: "${celebratorySpeech}"`);
-    voiceEngine.speak(celebratorySpeech, { pitch: 1.4, rate: 0.9, volume: 1.0 });
+    voiceEngine.speak(celebratorySpeech, { pitch: 1.6, rate: 1.1, volume: 1.0 });
 
     this.potsNewRoundTimer = setTimeout(() => {
       this.nextPotWord();
@@ -1420,7 +1425,7 @@ class FreezeDanceGame {
 
     const spokenName = pose.name;
     const spokenAction = pose.action || pose.hint;
-    voiceEngine.speak(`${spokenName}! ${spokenAction}`, { pitch: 1.4, rate: 1.05, volume: 1.0 });
+    voiceEngine.speak(`Arf! Let's do ${spokenName}! ${spokenAction}`, { pitch: 1.6, rate: 1.1 });
 
     if (this.isSimulating) {
       const mock = this.generateMockLandmarks(pose.id);
@@ -1445,7 +1450,7 @@ class FreezeDanceGame {
     this.hideAllOverlays();
     this.dom.actionOverlay.classList.remove('hidden');
 
-    voiceEngine.speak('Jump! Jump! Jump!', { pitch: 1.25, rate: 1.15, volume: 1.0 });
+    voiceEngine.speak("Ruff ruff! Jump! Jump! Jump with me!", { pitch: 1.6, rate: 1.1 });
 
     this.dom.statusText.textContent = 'Phase 1: JUMP! JUMP! JUMP!';
     this.dom.targetCardSubtitle.textContent = 'Up Next: Freeze Pose';
@@ -1489,8 +1494,7 @@ class FreezeDanceGame {
     this.dom.freezeOverlay.classList.remove('hidden');
 
     const spokenName = this.currentPose.name;
-    const spokenAction = this.currentPose.action || this.currentPose.hint;
-    voiceEngine.speak(`Three... Two... One... Freeze! ${spokenName}! ${spokenAction}`, { pitch: 1.4, rate: 1.05, volume: 1.0 });
+    voiceEngine.speak(`Freeze! Hold still like a good pup! ${spokenName}!`, { pitch: 1.6, rate: 1.1 });
 
     this.dom.targetCardSubtitle.textContent = 'ACTIVE TARGET POSE';
     this.dom.targetPoseCard.classList.add('forest-card-glow');
@@ -1582,11 +1586,11 @@ class FreezeDanceGame {
           soundEngine.playCountdownTick(currentNum);
 
           if (currentNum === 3) {
-            voiceEngine.speak('Three', { pitch: 1.15, rate: 1.05, volume: 1.0 });
+            voiceEngine.speak('Three', { pitch: 1.6, rate: 1.1, volume: 1.0, chime: false });
           } else if (currentNum === 2) {
-            voiceEngine.speak('Two', { pitch: 1.2, rate: 1.05, volume: 1.0 });
+            voiceEngine.speak('Two', { pitch: 1.6, rate: 1.1, volume: 1.0, chime: false });
           } else if (currentNum === 1) {
-            voiceEngine.speak('One', { pitch: 1.25, rate: 1.05, volume: 1.0 });
+            voiceEngine.speak('One', { pitch: 1.6, rate: 1.1, volume: 1.0, chime: false });
           }
         }
 
@@ -1724,7 +1728,7 @@ class FreezeDanceGame {
       this.dom.nextRoundBtn.textContent = 'Jump Back In! ➔';
     }
 
-    voiceEngine.speak('Wow! Completed! Great job!', { pitch: 1.4, rate: 1.05, volume: 1.0 });
+    voiceEngine.speak("Paw-some job! Wow, you did it!", { pitch: 1.6, rate: 1.1 });
 
     let restartSeconds = 3;
     this.dom.autoRestartCountdown.textContent = `${restartSeconds}`;

@@ -1,38 +1,53 @@
 /**
  * Voice Engine using browser native Web Speech API (window.speechSynthesis)
- * Provides enthusiastic, kid-friendly voiceovers with pitch 1.4 and friendly voice selection.
+ * Configured with a cute, friendly "Little Puppy" companion character:
+ * - Pitch 1.6 (youthful, light, cartoon-like tone)
+ * - Rate 1.1 (bouncy, energetic pacing)
+ * - Clean voice selection preferring Natural & high-clarity voices
+ * - Interactive two-tone "yip-yip" chime accent right before the puppy speaks
  */
+import { soundEngine } from './audio.js';
 
 /**
- * Loops through window.speechSynthesis.getVoices() and tries to select a friendly-sounding voice:
- * 1. 'Google UK English Female'
- * 2. 'Microsoft Zira'
- * 3. Fallback to the first available female voice
- * 4. Fallback to first English or first available voice
+ * Loops through window.speechSynthesis.getVoices() and picks the cleanest, smoothest available voice:
+ * 1. Voices containing 'Natural' (e.g. Microsoft Natural voices on Edge/Windows)
+ * 2. 'Google UK English Female' or other Google female voices
+ * 3. High-clarity female voices responding best to pitch shifts without robotic distortion
+ * 4. Fallback to first English voice
+ * 5. Fallback to first available voice
  */
 export function selectFriendlyVoice(voices) {
   if (!voices || voices.length === 0) return null;
 
-  // 1. Look for 'Google UK English Female'
+  // 1. Prefer high-quality 'Natural' voices (exceptionally smooth at pitch 1.6)
+  for (let i = 0; i < voices.length; i++) {
+    const nameLower = voices[i].name.toLowerCase();
+    if (nameLower.includes('natural') && (voices[i].lang.startsWith('en') || !voices[i].lang)) {
+      return voices[i];
+    }
+  }
+
+  // 2. Prefer 'Google UK English Female' or Google English voices
   for (let i = 0; i < voices.length; i++) {
     if (voices[i].name.includes('Google UK English Female')) {
       return voices[i];
     }
   }
-
-  // 2. Look for 'Microsoft Zira'
   for (let i = 0; i < voices.length; i++) {
-    if (voices[i].name.includes('Microsoft Zira')) {
+    if (voices[i].name.includes('Google US English') || voices[i].name.includes('Google UK English')) {
       return voices[i];
     }
   }
 
-  // 3. Fallback to the first available female voice
-  const femaleKeywords = ['female', 'zira', 'samantha', 'victoria', 'karen', 'jenny', 'hazel', 'fiona', 'moira', 'tessa', 'eva', 'serena'];
+  // 3. Prefer high-clarity female voices which respond best to pitch shifts
+  const highClarityKeywords = [
+    'female', 'zira', 'samantha', 'victoria', 'karen', 'jenny', 'aria',
+    'hazel', 'fiona', 'moira', 'tessa', 'eva', 'serena', 'allison', 'ava'
+  ];
   for (let i = 0; i < voices.length; i++) {
     const nameLower = voices[i].name.toLowerCase();
-    for (let k = 0; k < femaleKeywords.length; k++) {
-      if (nameLower.includes(femaleKeywords[k])) {
+    for (let k = 0; k < highClarityKeywords.length; k++) {
+      if (nameLower.includes(highClarityKeywords[k])) {
         return voices[i];
       }
     }
@@ -79,9 +94,12 @@ class VoiceEngine {
   }
 
   /**
-   * Speak text with enthusiastic kid-friendly settings (default pitch 1.4)
+   * Speak text with cute, friendly "little puppy" character settings:
+   * - Pitch 1.6 (youthful, light, cartoon tone)
+   * - Rate 1.1 (bouncy, energetic pacing)
+   * - Optional soft two-tone "yip-yip" mascot chime right before speech
    */
-  speak(text, { pitch = 1.4, rate = 1.05, volume = 1.0, interrupt = true } = {}) {
+  speak(text, { pitch = 1.6, rate = 1.1, volume = 1.0, interrupt = true, chime = true } = {}) {
     if (this.muted || !this.synth) return;
 
     // Refresh voices if not yet cached
@@ -94,12 +112,17 @@ class VoiceEngine {
       this.activeUtterances.clear();
     }
 
+    // Play cheerful two-tone "yip-yip" mascot chime
+    if (chime) {
+      soundEngine.playYipYipChime();
+    }
+
     const utterance = new SpeechSynthesisUtterance(text);
     if (this.selectedVoice) {
       utterance.voice = this.selectedVoice;
     }
-    utterance.pitch = pitch;   // Pitch 1.4: higher and enthusiastic for kids
-    utterance.rate = rate;     // Natural, lively cadence
+    utterance.pitch = pitch;   // 1.6: puppy character pitch
+    utterance.rate = rate;     // 1.1: energetic puppy pacing
     utterance.volume = volume; // Full clear volume
 
     // Store in Set to prevent premature garbage collection in Chrome
@@ -111,11 +134,14 @@ class VoiceEngine {
       this.activeUtterances.delete(utterance);
     };
 
-    if (this.synth.paused) {
-      this.synth.resume();
-    }
-
-    this.synth.speak(utterance);
+    // Brief 75ms space so the mascot yip-yip chime rings delightfully right before the puppy speaks
+    const speakDelay = chime ? 75 : 0;
+    setTimeout(() => {
+      if (this.synth.paused) {
+        this.synth.resume();
+      }
+      this.synth.speak(utterance);
+    }, speakDelay);
   }
 
   stop() {

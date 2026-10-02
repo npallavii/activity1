@@ -452,6 +452,63 @@ class SoundEngine {
     osc.start(now);
     osc.stop(now + 0.2);
   }
+
+  /**
+   * Brief, soft two-tone "yip-yip" puppy mascot chime right before puppy speaks
+   */
+  playYipYipChime() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    // Tone 1: quick cheerful chirp (920Hz -> 1380Hz)
+    const osc1 = this.ctx.createOscillator();
+    const gain1 = this.ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(920, now);
+    osc1.frequency.exponentialRampToValueAtTime(1380, now + 0.05);
+    gain1.gain.setValueAtTime(0.12, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+    osc1.connect(gain1);
+    gain1.connect(this.ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.07);
+
+    // Tone 2: playful perk (1220Hz -> 1760Hz)
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1220, now + 0.065);
+    osc2.frequency.exponentialRampToValueAtTime(1760, now + 0.13);
+    gain2.gain.setValueAtTime(0.14, now + 0.065);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc2.connect(gain2);
+    gain2.connect(this.ctx.destination);
+    osc2.start(now + 0.065);
+    osc2.stop(now + 0.155);
+  }
+
+  /**
+   * Soft, cheerful pop sound effect for pot hit
+   */
+  playSoftPop() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(960, now + 0.07);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.085);
+  }
 }
 
 export const soundEngine = new SoundEngine();
