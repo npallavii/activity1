@@ -1,6 +1,6 @@
 /**
  * Pose Definitions & Evaluator for "Freeze & Pose"
- * Contains target stick-figure visual definitions and landmark evaluation logic.
+ * Contains target stick-figure visual definitions and joint-angle landmark evaluation logic.
  */
 
 // MediaPipe Pose Landmark Indices
@@ -35,6 +35,38 @@ export const LANDMARKS = {
   LEFT_ANKLE: 27,
   RIGHT_ANKLE: 28,
 };
+
+/**
+ * Calculates the 2D joint angle at vertex pointB formed by (pointA -> pointB) and (pointC -> pointB).
+ * Returns angle in degrees [0, 180], or null if any point is missing or degenerate.
+ */
+export function calculateJointAngle(pointA, pointB, pointC) {
+  if (!pointA || !pointB || !pointC) return null;
+  const v1x = pointA.x - pointB.x;
+  const v1y = pointA.y - pointB.y;
+  const v2x = pointC.x - pointB.x;
+  const v2y = pointC.y - pointB.y;
+
+  const mag1 = Math.hypot(v1x, v1y);
+  const mag2 = Math.hypot(v2x, v2y);
+  if (mag1 < 1e-5 || mag2 < 1e-5) return null;
+
+  const dot = v1x * v2x + v1y * v2y;
+  const cosTheta = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
+  return (Math.acos(cosTheta) * 180) / Math.PI;
+}
+
+/**
+ * Scores an angle against a target ideal range [minIdeal, maxIdeal].
+ * Returns 1.0 if inside the ideal range, decays linearly to 0.0 at error >= tolerance.
+ */
+export function scoreAngleRange(actualAngle, minIdeal, maxIdeal, tolerance = 35) {
+  if (actualAngle === null || actualAngle === undefined || isNaN(actualAngle)) return 0;
+  if (actualAngle >= minIdeal && actualAngle <= maxIdeal) return 1.0;
+  const err = actualAngle < minIdeal ? minIdeal - actualAngle : actualAngle - maxIdeal;
+  if (err >= tolerance) return 0.0;
+  return Math.max(0, 1.0 - err / tolerance);
+}
 
 /**
  * ============================================================
@@ -75,34 +107,63 @@ export const POSES = [
     evaluate: (lm) => {
       const ls = lm[LANDMARKS.LEFT_SHOULDER];
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
+      const le = lm[LANDMARKS.LEFT_ELBOW];
+      const re = lm[LANDMARKS.RIGHT_ELBOW];
       const lw = lm[LANDMARKS.LEFT_WRIST];
       const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const lh = lm[LANDMARKS.LEFT_HIP] || { x: ls ? ls.x : 0.45, y: (ls ? ls.y : 0.4) + 0.3 };
+      const rh = lm[LANDMARKS.RIGHT_HIP] || { x: rs ? rs.x : 0.55, y: (rs ? rs.y : 0.4) + 0.3 };
 
-      if (!lw || !rw || !ls || !rs) {
-        return { isMatch: false, feedback: 'Step into view so the mirror sees your wings! ✈️' };
+      if (!lw || !rw || !ls || !rs || !le || !re) {
+        return { isMatch: false, accuracy: 0, feedback: 'Step into view so the mirror sees your wings! ✈️' };
       }
 
       if ((lw.visibility || 1) < 0.35 || (rw.visibility || 1) < 0.35) {
-        return { isMatch: false, feedback: 'Bring both arms into the camera view! ✈️' };
+        return { isMatch: false, accuracy: 0, feedback: 'Bring both arms into the camera view! ✈️' };
       }
 
-      // Arms stretched wide horizontally like wings
-      const leftArmHoriz = Math.abs(lw.y - ls.y) < 0.22;
-      const rightArmHoriz = Math.abs(rw.y - rs.y) < 0.22;
-      const shoulderDist = Math.abs(ls.x - rs.x);
-      const armSpan = Math.abs(lw.x - rw.x);
-      const armsWide = armSpan > shoulderDist * 1.5;
+      // Joint angles:
+      // Left shoulder angle: (Hip - Shoulder - Elbow) -> ~80° - 105°
+      const leftShoulderAngle = calculateJointAngle(lh, ls, le);
+      const scoreLS = scoreAngleRange(leftShoulderAngle, 75, 105, 30);
 
-      if (leftArmHoriz && rightArmHoriz && armsWide) {
+      // Right shoulder angle: (Hip - Shoulder - Elbow) -> ~80° - 105°
+      const rightShoulderAngle = calculateJointAngle(rh, rs, re);
+      const scoreRS = scoreAngleRange(rightShoulderAngle, 75, 105, 30);
+
+      // Left elbow angle: (Shoulder - Elbow - Wrist) -> ~160° - 180°
+      const leftElbowAngle = calculateJointAngle(ls, le, lw);
+      const scoreLE = scoreAngleRange(leftElbowAngle, 155, 180, 30);
+
+      // Right elbow angle: (Shoulder - Elbow - Wrist) -> ~160° - 180°
+      const rightElbowAngle = calculateJointAngle(rs, re, rw);
+      const scoreRE = scoreAngleRange(rightElbowAngle, 155, 180, 30);
+
+      // Horizontal wrist alignment relative to shoulder
+      const scoreLHoriz = Math.max(0, 1.0 - Math.abs(lw.y - ls.y) / 0.18);
+      const scoreRHoriz = Math.max(0, 1.0 - Math.abs(rw.y - rs.y) / 0.18);
+
+      // Wide wingspan
+      const shoulderDist = Math.max(0.1, Math.abs(ls.x - rs.x));
+      const armSpan = Math.abs(lw.x - rw.x);
+      const scoreSpan = Math.min(1.0, Math.max(0, (armSpan / shoulderDist - 1.2) / 0.8));
+
+      const scores = [scoreLS, scoreRS, scoreLE, scoreRE, scoreLHoriz, scoreRHoriz, scoreSpan];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'SOARING AIRPLANE! Wings steady in the sky! ✈️'
         };
       }
 
       return {
         isMatch: false,
-        feedback: 'Stretch arms out wide to the sides like airplane wings! ✈️'
+        accuracy,
+        feedback: 'Stretch arms straight out wide to the sides like airplane wings! ✈️'
       };
     }
   },
@@ -137,36 +198,81 @@ export const POSES = [
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
       const lw = lm[LANDMARKS.LEFT_WRIST];
       const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const lh = lm[LANDMARKS.LEFT_HIP];
+      const rh = lm[LANDMARKS.RIGHT_HIP];
       const lk = lm[LANDMARKS.LEFT_KNEE];
       const rk = lm[LANDMARKS.RIGHT_KNEE];
       const la = lm[LANDMARKS.LEFT_ANKLE];
       const ra = lm[LANDMARKS.RIGHT_ANKLE];
 
-      if (!ls || !rs) return { isMatch: false, feedback: 'Step into view!' };
+      if (!ls || !rs) return { isMatch: false, accuracy: 0, feedback: 'Step into view! 🦩' };
 
-      // Leg check: one leg lifted
-      const anklesVisible = la && ra && (la.visibility || 1) > 0.35 && (ra.visibility || 1) > 0.35;
-      const kneesVisible = lk && rk && (lk.visibility || 1) > 0.35 && (rk.visibility || 1) > 0.35;
-      
-      let oneLegLifted = false;
-      if (anklesVisible) {
-        oneLegLifted = Math.abs(la.y - ra.y) > 0.06;
-      } else if (kneesVisible) {
-        oneLegLifted = Math.abs(lk.y - rk.y) > 0.06;
+      // Leg evaluation: one standing leg (straight), one lifted leg (bent)
+      let scoreStandingKnee = 0;
+      let scoreLiftedKnee = 0;
+      let scoreLiftHeight = 0;
+
+      const hasLegs = lh && rh && lk && rk;
+      if (hasLegs && la && ra) {
+        // Case 1: Right leg lifted, Left leg standing
+        const leftKneeAngle1 = calculateJointAngle(lh, lk, la);
+        const rightKneeAngle1 = calculateJointAngle(rh, rk, ra);
+        const sStanding1 = scoreAngleRange(leftKneeAngle1, 155, 180, 25);
+        const sLifted1 = scoreAngleRange(rightKneeAngle1, 40, 115, 30);
+        const sHeight1 = scoreAngleRange((la.y - ra.y) * 100, 5, 45, 10);
+        const avg1 = (sStanding1 + sLifted1 + sHeight1) / 3;
+
+        // Case 2: Left leg lifted, Right leg standing
+        const leftKneeAngle2 = calculateJointAngle(lh, lk, la);
+        const rightKneeAngle2 = calculateJointAngle(rh, rk, ra);
+        const sStanding2 = scoreAngleRange(rightKneeAngle2, 155, 180, 25);
+        const sLifted2 = scoreAngleRange(leftKneeAngle2, 40, 115, 30);
+        const sHeight2 = scoreAngleRange((ra.y - la.y) * 100, 5, 45, 10);
+        const avg2 = (sStanding2 + sLifted2 + sHeight2) / 3;
+
+        if (avg1 >= avg2) {
+          scoreStandingKnee = sStanding1;
+          scoreLiftedKnee = sLifted1;
+          scoreLiftHeight = sHeight1;
+        } else {
+          scoreStandingKnee = sStanding2;
+          scoreLiftedKnee = sLifted2;
+          scoreLiftHeight = sHeight2;
+        }
+      } else if (hasLegs) {
+        // If ankles cropped out, use knee differential
+        const kneeDiff = Math.abs(lk.y - rk.y);
+        scoreLiftHeight = kneeDiff > 0.08 ? 1.0 : Math.max(0, kneeDiff / 0.08);
+        scoreStandingKnee = 0.9;
+        scoreLiftedKnee = 0.9;
       } else {
-        // Upper body framing fallback: centered torso and balanced wing arms
-        oneLegLifted = lw && rw && Math.abs(lw.y - rw.y) < 0.22;
+        // Upper-body fallback: hands balanced like flamingo wings
+        const armBalance = lw && rw ? Math.max(0, 1.0 - Math.abs(lw.y - rw.y) / 0.20) : 0;
+        scoreStandingKnee = armBalance;
+        scoreLiftedKnee = armBalance;
+        scoreLiftHeight = armBalance;
       }
 
-      if (oneLegLifted) {
+      // Torso upright check
+      const midShoulderX = (ls.x + rs.x) / 2;
+      const midHipX = lh && rh ? (lh.x + rh.x) / 2 : midShoulderX;
+      const scoreUpright = Math.max(0, 1.0 - Math.abs(midShoulderX - midHipX) / 0.12);
+
+      const scores = [scoreStandingKnee, scoreLiftedKnee, scoreLiftHeight, scoreUpright];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'ELEGANT FLAMINGO! Standing tall on one leg! 🦩'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Lift one leg and balance tall like a proud flamingo! 🦩'
       };
     }
@@ -203,28 +309,68 @@ export const POSES = [
       const nose = lm[LANDMARKS.NOSE];
       const lw = lm[LANDMARKS.LEFT_WRIST];
       const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const lh = lm[LANDMARKS.LEFT_HIP];
+      const rh = lm[LANDMARKS.RIGHT_HIP];
       const lk = lm[LANDMARKS.LEFT_KNEE];
       const rk = lm[LANDMARKS.RIGHT_KNEE];
+      const la = lm[LANDMARKS.LEFT_ANKLE];
+      const ra = lm[LANDMARKS.RIGHT_ANKLE];
 
-      if (!ls || !rs || !nose) return { isMatch: false, feedback: 'Step into view!' };
+      if (!ls || !rs || !nose) return { isMatch: false, accuracy: 0, feedback: 'Step into view! 🐸' };
 
-      const shoulderDist = Math.abs(ls.x - rs.x);
-      // Squat low: head/shoulders lowered in frame or hips lowered near knees
-      const isLowered = nose.y > 0.30 || ls.y > 0.40;
-      // Hands low down near hips/floor
-      const handsDown = lw && rw && lw.y > ls.y + 0.10 && rw.y > rs.y + 0.10;
-      // Knees wide if visible
-      const kneesWide = !lk || !rk || Math.abs(lk.x - rk.x) > shoulderDist * 1.1;
+      // Knee flexion angle: deep squat [40° - 105°]
+      let scoreLK = 0.85;
+      let scoreRK = 0.85;
+      if (lh && rh && lk && rk && la && ra) {
+        const angleLK = calculateJointAngle(lh, lk, la);
+        const angleRK = calculateJointAngle(rh, rk, ra);
+        scoreLK = scoreAngleRange(angleLK, 40, 105, 30);
+        scoreRK = scoreAngleRange(angleRK, 40, 105, 30);
+      }
 
-      if (isLowered && (handsDown || kneesWide)) {
+      // Hip flexion: [45° - 110°]
+      let scoreLH = 0.85;
+      let scoreRH = 0.85;
+      if (lh && rh && lk && rk) {
+        const angleLH = calculateJointAngle(ls, lh, lk);
+        const angleRH = calculateJointAngle(rs, rh, rk);
+        scoreLH = scoreAngleRange(angleLH, 45, 110, 30);
+        scoreRH = scoreAngleRange(angleRH, 45, 110, 30);
+      }
+
+      // Low vertical height in frame
+      const scoreLow = Math.min(1.0, Math.max(0, (nose.y - 0.28) / 0.14));
+
+      // Hands down low near knees/floor
+      let scoreHands = 0.85;
+      if (lw && rw) {
+        const handsLow = (lw.y > ls.y + 0.08) && (rw.y > rs.y + 0.08);
+        scoreHands = handsLow ? 1.0 : Math.max(0, 1.0 - ((ls.y + 0.08) - Math.min(lw.y, rw.y)) / 0.15);
+      }
+
+      // Knees wide
+      const shoulderDist = Math.max(0.1, Math.abs(ls.x - rs.x));
+      let scoreWide = 0.85;
+      if (lk && rk) {
+        const kneeSpan = Math.abs(lk.x - rk.x);
+        scoreWide = Math.min(1.0, Math.max(0, (kneeSpan / shoulderDist - 0.9) / 0.5));
+      }
+
+      const scores = [scoreLK, scoreRK, scoreLH, scoreRH, scoreLow, scoreHands, scoreWide];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'RIBBIT! Low frog squat held strong! 🐸'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Squat down low with knees wide like a frog! 🐸'
       };
     }
@@ -258,35 +404,62 @@ export const POSES = [
     evaluate: (lm) => {
       const ls = lm[LANDMARKS.LEFT_SHOULDER];
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
+      const le = lm[LANDMARKS.LEFT_ELBOW];
+      const re = lm[LANDMARKS.RIGHT_ELBOW];
       const lw = lm[LANDMARKS.LEFT_WRIST];
       const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const lh = lm[LANDMARKS.LEFT_HIP] || { x: ls ? ls.x : 0.45, y: (ls ? ls.y : 0.4) + 0.25 };
+      const rh = lm[LANDMARKS.RIGHT_HIP] || { x: rs ? rs.x : 0.55, y: (rs ? rs.y : 0.4) + 0.25 };
       const lk = lm[LANDMARKS.LEFT_KNEE];
       const rk = lm[LANDMARKS.RIGHT_KNEE];
       const la = lm[LANDMARKS.LEFT_ANKLE];
       const ra = lm[LANDMARKS.RIGHT_ANKLE];
 
-      if (!lw || !rw || !ls || !rs) return { isMatch: false, feedback: 'Step into view!' };
+      if (!lw || !rw || !ls || !rs || !le || !re) return { isMatch: false, accuracy: 0, feedback: 'Step into view! 🏄' };
 
-      const shoulderDist = Math.abs(ls.x - rs.x);
-      // Arms stretched horizontal wide
-      const leftHoriz = Math.abs(lw.y - ls.y) < 0.22;
-      const rightHoriz = Math.abs(rw.y - rs.y) < 0.22;
-      const armSpan = Math.abs(lw.x - rw.x);
-      const armsWide = armSpan > shoulderDist * 1.5;
+      // Arm joint angles: wide horizontal reach
+      const leftShoulderAngle = calculateJointAngle(lh, ls, le);
+      const scoreLS = scoreAngleRange(leftShoulderAngle, 75, 105, 30);
 
-      // Legs wide if visible
-      const legsWide = (!la || !ra || Math.abs(la.x - ra.x) > shoulderDist * 1.1) &&
-                       (!lk || !rk || Math.abs(lk.x - rk.x) > shoulderDist * 1.05);
+      const rightShoulderAngle = calculateJointAngle(rh, rs, re);
+      const scoreRS = scoreAngleRange(rightShoulderAngle, 75, 105, 30);
 
-      if (leftHoriz && rightHoriz && armsWide && legsWide) {
+      const leftElbowAngle = calculateJointAngle(ls, le, lw);
+      const scoreLE = scoreAngleRange(leftElbowAngle, 155, 180, 30);
+
+      const rightElbowAngle = calculateJointAngle(rs, re, rw);
+      const scoreRE = scoreAngleRange(rightElbowAngle, 155, 180, 30);
+
+      // Horizontal wrist alignment
+      const scoreLHoriz = Math.max(0, 1.0 - Math.abs(lw.y - ls.y) / 0.18);
+      const scoreRHoriz = Math.max(0, 1.0 - Math.abs(rw.y - rs.y) / 0.18);
+
+      // Wide stance
+      const shoulderDist = Math.max(0.1, Math.abs(ls.x - rs.x));
+      let scoreLegs = 0.85;
+      if (la && ra) {
+        const ankleDist = Math.abs(la.x - ra.x);
+        scoreLegs = Math.min(1.0, Math.max(0, (ankleDist / shoulderDist - 1.1) / 0.5));
+      } else if (lk && rk) {
+        const kneeDist = Math.abs(lk.x - rk.x);
+        scoreLegs = Math.min(1.0, Math.max(0, (kneeDist / shoulderDist - 1.0) / 0.4));
+      }
+
+      const scores = [scoreLS, scoreRS, scoreLE, scoreRE, scoreLHoriz, scoreRHoriz, scoreLegs];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'COWABUNGA! Surfing the big wave with balance! 🏄'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Legs wide, stretch arms out to ride the wave! 🏄'
       };
     }
@@ -296,7 +469,6 @@ export const POSES = [
 /**
  * ============================================================
  * FRUIT YOGA POSES (Shape Themes, 5-Second Hold Mode)
- * Each fruit displays image/emoji, the word, voiceover & related yoga pose!
  * 1. Banana: Arms up high and bend to the side! (Standing side bend)
  * 2. Starfruit: Stretch arms and legs out wide like a star! (Five-pointed star pose)
  * 3. Apple: Tuck in round and small like an apple. (Child's pose)
@@ -336,37 +508,63 @@ export const FRUIT_POSES = [
     evaluate: (lm) => {
       const ls = lm[LANDMARKS.LEFT_SHOULDER];
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
+      const le = lm[LANDMARKS.LEFT_ELBOW];
+      const re = lm[LANDMARKS.RIGHT_ELBOW];
       const lw = lm[LANDMARKS.LEFT_WRIST];
       const rw = lm[LANDMARKS.RIGHT_WRIST];
-      const nose = lm[LANDMARKS.NOSE];
+      const lh = lm[LANDMARKS.LEFT_HIP] || { x: ls ? ls.x : 0.45, y: (ls ? ls.y : 0.4) + 0.3 };
+      const rh = lm[LANDMARKS.RIGHT_HIP] || { x: rs ? rs.x : 0.55, y: (rs ? rs.y : 0.4) + 0.3 };
 
-      if (!lw || !rw || !ls || !rs || !nose) {
-        return { isMatch: false, feedback: 'Step into view to show your Banana pose! 🍌' };
+      if (!lw || !rw || !ls || !rs || !le || !re) {
+        return { isMatch: false, accuracy: 0, feedback: 'Step into view to show your Banana pose! 🍌' };
       }
 
-      // Both hands raised high
-      const armsUp = lw.y < ls.y - 0.06 && rw.y < rs.y - 0.06;
-      // Sideways curve: wrists shifted noticeably to either left or right of shoulder center
+      // Overhead reach joint angles: [150° - 180°]
+      const leftShoulderAngle = calculateJointAngle(lh, ls, le);
+      const scoreLS = scoreAngleRange(leftShoulderAngle, 145, 180, 30);
+
+      const rightShoulderAngle = calculateJointAngle(rh, rs, re);
+      const scoreRS = scoreAngleRange(rightShoulderAngle, 145, 180, 30);
+
+      const leftElbowAngle = calculateJointAngle(ls, le, lw);
+      const scoreLE = scoreAngleRange(leftElbowAngle, 145, 180, 30);
+
+      const rightElbowAngle = calculateJointAngle(rs, re, rw);
+      const scoreRE = scoreAngleRange(rightElbowAngle, 145, 180, 30);
+
+      // Wrists above head
+      const scoreLUp = Math.min(1.0, Math.max(0, (ls.y - lw.y) / 0.18));
+      const scoreRUp = Math.min(1.0, Math.max(0, (rs.y - rw.y) / 0.18));
+
+      // Lateral curvature: wrists shifted sideways relative to shoulder center
       const shoulderCenter = (ls.x + rs.x) / 2;
       const wristCenter = (lw.x + rw.x) / 2;
-      const isCurved = Math.abs(wristCenter - shoulderCenter) > 0.04;
+      const lateralShift = Math.abs(wristCenter - shoulderCenter);
+      const scoreCurve = scoreAngleRange(lateralShift * 100, 5, 25, 6);
 
-      if (armsUp && isCurved) {
+      const scores = [scoreLS, scoreRS, scoreLE, scoreRE, scoreLUp, scoreRUp, scoreCurve];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'DELICIOUS BANANA CURVE! Hold steady for 5 seconds! 🍌'
         };
       }
 
-      if (armsUp && !isCurved) {
+      if (lateralShift < 0.04) {
         return {
           isMatch: false,
+          accuracy,
           feedback: 'Lean your arms and body to one side like a curved banana! 🍌'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Arms up high and bend to the side! 🍌'
       };
     }
@@ -403,29 +601,64 @@ export const FRUIT_POSES = [
     evaluate: (lm) => {
       const ls = lm[LANDMARKS.LEFT_SHOULDER];
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
+      const le = lm[LANDMARKS.LEFT_ELBOW];
+      const re = lm[LANDMARKS.RIGHT_ELBOW];
       const lw = lm[LANDMARKS.LEFT_WRIST];
       const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const lh = lm[LANDMARKS.LEFT_HIP] || { x: ls ? ls.x : 0.45, y: (ls ? ls.y : 0.4) + 0.3 };
+      const rh = lm[LANDMARKS.RIGHT_HIP] || { x: rs ? rs.x : 0.55, y: (rs ? rs.y : 0.4) + 0.3 };
       const la = lm[LANDMARKS.LEFT_ANKLE];
       const ra = lm[LANDMARKS.RIGHT_ANKLE];
+      const lk = lm[LANDMARKS.LEFT_KNEE];
+      const rk = lm[LANDMARKS.RIGHT_KNEE];
 
-      if (!lw || !rw || !ls || !rs) return { isMatch: false, feedback: 'Step into view!' };
+      if (!lw || !rw || !ls || !rs || !le || !re) return { isMatch: false, accuracy: 0, feedback: 'Step into view! ⭐' };
 
-      const shoulderDist = Math.abs(ls.x - rs.x);
-      // Arms high and wide in a star V
-      const armsHigh = lw.y < ls.y - 0.06 && rw.y < rs.y - 0.06;
-      const armsWide = lw.x < ls.x - 0.06 && rw.x > rs.x + 0.06;
-      // Legs wide if visible
-      const legsWide = !la || !ra || Math.abs(la.x - ra.x) > shoulderDist * 1.2 || (la.visibility || 1) < 0.4;
+      // Arms in high diagonal V [120° - 160°]
+      const leftShoulderAngle = calculateJointAngle(lh, ls, le);
+      const scoreLS = scoreAngleRange(leftShoulderAngle, 120, 160, 30);
 
-      if (armsHigh && armsWide && legsWide) {
+      const rightShoulderAngle = calculateJointAngle(rh, rs, re);
+      const scoreRS = scoreAngleRange(rightShoulderAngle, 120, 160, 30);
+
+      // Straight elbows [155° - 180°]
+      const leftElbowAngle = calculateJointAngle(ls, le, lw);
+      const scoreLE = scoreAngleRange(leftElbowAngle, 155, 180, 30);
+
+      const rightElbowAngle = calculateJointAngle(rs, re, rw);
+      const scoreRE = scoreAngleRange(rightElbowAngle, 155, 180, 30);
+
+      // Arms up and wide
+      const scoreArmsHigh = Math.min(1.0, Math.max(0, (ls.y - lw.y) / 0.15));
+      const shoulderDist = Math.max(0.1, Math.abs(ls.x - rs.x));
+      const armSpan = Math.abs(lw.x - rw.x);
+      const scoreArmsWide = Math.min(1.0, Math.max(0, (armSpan / shoulderDist - 1.2) / 0.6));
+
+      // Legs wide
+      let scoreLegs = 0.9;
+      if (la && ra) {
+        const ankleDist = Math.abs(la.x - ra.x);
+        scoreLegs = Math.min(1.0, Math.max(0, (ankleDist / shoulderDist - 1.1) / 0.5));
+      } else if (lk && rk) {
+        const kneeDist = Math.abs(lk.x - rk.x);
+        scoreLegs = Math.min(1.0, Math.max(0, (kneeDist / shoulderDist - 1.0) / 0.4));
+      }
+
+      const scores = [scoreLS, scoreRS, scoreLE, scoreRE, scoreArmsHigh, scoreArmsWide, scoreLegs];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'SHINING STARFRUIT! Glowing bright like a star! ⭐'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Stretch arms and legs out wide like a star! ⭐'
       };
     }
@@ -464,25 +697,65 @@ export const FRUIT_POSES = [
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
       const lw = lm[LANDMARKS.LEFT_WRIST];
       const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const le = lm[LANDMARKS.LEFT_ELBOW];
+      const re = lm[LANDMARKS.RIGHT_ELBOW];
       const nose = lm[LANDMARKS.NOSE];
       const lh = lm[LANDMARKS.LEFT_HIP];
+      const rh = lm[LANDMARKS.RIGHT_HIP];
+      const lk = lm[LANDMARKS.LEFT_KNEE];
+      const rk = lm[LANDMARKS.RIGHT_KNEE];
+      const la = lm[LANDMARKS.LEFT_ANKLE];
+      const ra = lm[LANDMARKS.RIGHT_ANKLE];
 
-      if (!ls || !rs || !nose) return { isMatch: false, feedback: 'Step into view!' };
+      if (!ls || !rs || !nose) return { isMatch: false, accuracy: 0, feedback: 'Step into view! 🍎' };
 
-      // Child's pose: tucked down low and small
-      const isLow = nose.y > 0.32 || ls.y > 0.38;
-      const isCompact = Math.abs(ls.y - (lh ? lh.y : 0.7)) < 0.35 || nose.y > 0.38;
-      const handsTucked = !lw || !rw || (lw.y > ls.y - 0.08 && rw.y > rs.y - 0.08);
+      // Compact flexion: Child's pose hips & knees flexed [35° - 90°]
+      let scoreLH = 0.85;
+      let scoreRH = 0.85;
+      if (lh && rh && lk && rk) {
+        const angleLH = calculateJointAngle(ls, lh, lk);
+        const angleRH = calculateJointAngle(rs, rh, rk);
+        scoreLH = scoreAngleRange(angleLH, 35, 90, 30);
+        scoreRH = scoreAngleRange(angleRH, 35, 90, 30);
+      }
 
-      if (isLow && isCompact && handsTucked) {
+      let scoreLK = 0.85;
+      let scoreRK = 0.85;
+      if (lh && rh && lk && rk && la && ra) {
+        const angleLK = calculateJointAngle(lh, lk, la);
+        const angleRK = calculateJointAngle(rh, rk, ra);
+        scoreLK = scoreAngleRange(angleLK, 35, 90, 30);
+        scoreRK = scoreAngleRange(angleRK, 35, 90, 30);
+      }
+
+      // Low vertical profile in frame
+      const scoreLow = Math.min(1.0, Math.max(0, (nose.y - 0.32) / 0.15));
+
+      // Elbows/arms: in child's pose, arms can be extended forward on floor [135° - 180°] or tucked back by sides [35° - 110°]
+      let scoreElbows = 0.85;
+      if (le && re && lw && rw) {
+        const angleLE = calculateJointAngle(ls, le, lw);
+        const angleRE = calculateJointAngle(rs, re, rw);
+        const sL = Math.max(scoreAngleRange(angleLE, 35, 110, 30), scoreAngleRange(angleLE, 135, 180, 30));
+        const sR = Math.max(scoreAngleRange(angleRE, 35, 110, 30), scoreAngleRange(angleRE, 135, 180, 30));
+        scoreElbows = (sL + sR) / 2;
+      }
+
+      const scores = [scoreLH, scoreRH, scoreLK, scoreRK, scoreLow, scoreElbows];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'SWEET ROUND APPLE! Cozy and tucked in small! 🍎'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Tuck in round and small like an apple! 🍎'
       };
     }
@@ -525,28 +798,58 @@ export const FRUIT_POSES = [
       const ra = lm[LANDMARKS.RIGHT_ANKLE];
       const lk = lm[LANDMARKS.LEFT_KNEE];
       const rk = lm[LANDMARKS.RIGHT_KNEE];
+      const lh = lm[LANDMARKS.LEFT_HIP];
+      const rh = lm[LANDMARKS.RIGHT_HIP];
       const nose = lm[LANDMARKS.NOSE];
 
-      if (!ls || !rs || !nose) return { isMatch: false, feedback: 'Step into view!' };
+      if (!ls || !rs || !nose) return { isMatch: false, accuracy: 0, feedback: 'Step into view! 🍉' };
 
-      const isSeatedOrLow = nose.y > 0.28 || ls.y > 0.36;
-      const shoulderDist = Math.abs(ls.x - rs.x);
-      
-      // Legs wide apart on the ground
-      const legsWide = (la && ra && Math.abs(la.x - ra.x) > 0.35) ||
-                       (lk && rk && Math.abs(lk.x - rk.x) > 0.30);
-      // Or arms stretched wide down low towards feet
-      const armsWideLow = lw && rw && Math.abs(lw.x - rw.x) > shoulderDist * 1.4 && lw.y > ls.y;
+      // Seated / low level in frame
+      const scoreLow = Math.min(1.0, Math.max(0, (nose.y - 0.26) / 0.12));
 
-      if (isSeatedOrLow && (legsWide || armsWideLow)) {
+      // Hips flexed seated [60° - 115°]
+      let scoreLH = 0.85;
+      let scoreRH = 0.85;
+      if (lh && rh && lk && rk) {
+        const angleLH = calculateJointAngle(ls, lh, lk);
+        const angleRH = calculateJointAngle(rs, rh, rk);
+        scoreLH = scoreAngleRange(angleLH, 60, 115, 30);
+        scoreRH = scoreAngleRange(angleRH, 60, 115, 30);
+      }
+
+      // Legs straight [140° - 180°]
+      let scoreLK = 0.85;
+      let scoreRK = 0.85;
+      if (lh && rh && lk && rk && la && ra) {
+        const angleLK = calculateJointAngle(lh, lk, la);
+        const angleRK = calculateJointAngle(rh, rk, ra);
+        scoreLK = scoreAngleRange(angleLK, 140, 180, 30);
+        scoreRK = scoreAngleRange(angleRK, 140, 180, 30);
+      }
+
+      // Wide leg spread
+      let scoreLegSpan = 0.85;
+      if (la && ra) {
+        scoreLegSpan = Math.min(1.0, Math.max(0, (Math.abs(la.x - ra.x) - 0.28) / 0.3));
+      } else if (lk && rk) {
+        scoreLegSpan = Math.min(1.0, Math.max(0, (Math.abs(lk.x - rk.x) - 0.24) / 0.25));
+      }
+
+      const scores = [scoreLow, scoreLH, scoreRH, scoreLK, scoreRK, scoreLegSpan];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'BIG WATERMELON SLICE! Wide stretch held strong! 🍉'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Sit down and stretch your legs wide apart! 🍉'
       };
     }
@@ -556,7 +859,6 @@ export const FRUIT_POSES = [
 /**
  * ============================================================
  * VEGETABLE YOGA POSES (5-Second Hold Mode)
- * Each vegetable displays image/emoji, the word, voiceover & related yoga pose!
  * ============================================================
  */
 export const VEGETABLE_POSES = [
@@ -591,27 +893,54 @@ export const VEGETABLE_POSES = [
     evaluate: (lm) => {
       const ls = lm[LANDMARKS.LEFT_SHOULDER];
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
+      const le = lm[LANDMARKS.LEFT_ELBOW];
+      const re = lm[LANDMARKS.RIGHT_ELBOW];
       const lw = lm[LANDMARKS.LEFT_WRIST];
       const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const lh = lm[LANDMARKS.LEFT_HIP] || { x: ls ? ls.x : 0.45, y: (ls ? ls.y : 0.4) + 0.3 };
+      const rh = lm[LANDMARKS.RIGHT_HIP] || { x: rs ? rs.x : 0.55, y: (rs ? rs.y : 0.4) + 0.3 };
       const nose = lm[LANDMARKS.NOSE];
 
-      if (!lw || !rw || !ls || !rs || !nose) {
-        return { isMatch: false, feedback: 'Step into view to show your Carrot pose!' };
+      if (!lw || !rw || !ls || !rs || !le || !re || !nose) {
+        return { isMatch: false, accuracy: 0, feedback: 'Step into view to show your Carrot pose! 🥕' };
       }
 
-      // Hands pointed straight up above nose and close together
-      const handsHigh = lw.y < nose.y && rw.y < nose.y;
-      const handsTogether = Math.hypot(lw.x - rw.x, lw.y - rw.y) < 0.16;
+      // Shoulders pointing straight up: [155° - 180°]
+      const leftShoulderAngle = calculateJointAngle(lh, ls, le);
+      const scoreLS = scoreAngleRange(leftShoulderAngle, 155, 180, 25);
 
-      if (handsHigh && handsTogether) {
+      const rightShoulderAngle = calculateJointAngle(rh, rs, re);
+      const scoreRS = scoreAngleRange(rightShoulderAngle, 155, 180, 25);
+
+      // Elbows straight: [155° - 180°]
+      const leftElbowAngle = calculateJointAngle(ls, le, lw);
+      const scoreLE = scoreAngleRange(leftElbowAngle, 155, 180, 25);
+
+      const rightElbowAngle = calculateJointAngle(rs, re, rw);
+      const scoreRE = scoreAngleRange(rightElbowAngle, 155, 180, 25);
+
+      // Hands together overhead
+      const distWrists = Math.hypot(lw.x - rw.x, lw.y - rw.y);
+      const scoreHandsTogether = scoreAngleRange(distWrists * 100, 0, 12, 10);
+
+      // Hands above nose
+      const scoreHandsAbove = (lw.y < nose.y && rw.y < nose.y) ? 1.0 : Math.max(0, 1.0 - (Math.max(lw.y, rw.y) - nose.y) / 0.15);
+
+      const scores = [scoreLS, scoreRS, scoreLE, scoreRE, scoreHandsTogether, scoreHandsAbove];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'CRUNCHY CARROT LOCKED! Hold steady for 5 seconds! 🥕'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Point both hands together straight to the sky like a carrot tip! 🥕'
       };
     }
@@ -647,27 +976,48 @@ export const VEGETABLE_POSES = [
     evaluate: (lm) => {
       const ls = lm[LANDMARKS.LEFT_SHOULDER];
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
-      const lw = lm[LANDMARKS.LEFT_WRIST];
-      const rw = lm[LANDMARKS.RIGHT_WRIST];
       const le = lm[LANDMARKS.LEFT_ELBOW];
       const re = lm[LANDMARKS.RIGHT_ELBOW];
+      const lw = lm[LANDMARKS.LEFT_WRIST];
+      const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const lh = lm[LANDMARKS.LEFT_HIP] || { x: ls ? ls.x : 0.45, y: (ls ? ls.y : 0.4) + 0.3 };
+      const rh = lm[LANDMARKS.RIGHT_HIP] || { x: rs ? rs.x : 0.55, y: (rs ? rs.y : 0.4) + 0.3 };
 
-      if (!lw || !rw || !ls || !rs || !le || !re) return { isMatch: false, feedback: 'Show your arms in the mirror!' };
+      if (!lw || !rw || !ls || !rs || !le || !re) return { isMatch: false, accuracy: 0, feedback: 'Show your arms in the mirror! 🥦' };
 
-      const leftElbowLevel = Math.abs(le.y - ls.y) < 0.18;
-      const rightElbowLevel = Math.abs(re.y - rs.y) < 0.18;
-      const leftForearmUp = lw.y < le.y - 0.08;
-      const rightForearmUp = rw.y < re.y - 0.08;
+      // Shoulders out at 90°: [75° - 105°]
+      const leftShoulderAngle = calculateJointAngle(lh, ls, le);
+      const scoreLS = scoreAngleRange(leftShoulderAngle, 75, 105, 25);
 
-      if (leftElbowLevel && rightElbowLevel && leftForearmUp && rightForearmUp) {
+      const rightShoulderAngle = calculateJointAngle(rh, rs, re);
+      const scoreRS = scoreAngleRange(rightShoulderAngle, 75, 105, 25);
+
+      // Elbows bent at 90°: [75° - 105°]
+      const leftElbowAngle = calculateJointAngle(ls, le, lw);
+      const scoreLE = scoreAngleRange(leftElbowAngle, 75, 105, 25);
+
+      const rightElbowAngle = calculateJointAngle(rs, re, rw);
+      const scoreRE = scoreAngleRange(rightElbowAngle, 75, 105, 25);
+
+      // Forearms pointing upwards
+      const scoreLUp = (lw.y < le.y - 0.05) ? 1.0 : Math.max(0, 1.0 - (lw.y - (le.y - 0.05)) / 0.15);
+      const scoreRUp = (rw.y < re.y - 0.05) ? 1.0 : Math.max(0, 1.0 - (rw.y - (re.y - 0.05)) / 0.15);
+
+      const scores = [scoreLS, scoreRS, scoreLE, scoreRE, scoreLUp, scoreRUp];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'MIGHTY BROCCOLI CROWNS! Hold frozen! 🥦'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Bend elbows and point both hands up like broccoli branches! 🥦'
       };
     }
@@ -703,25 +1053,43 @@ export const VEGETABLE_POSES = [
     evaluate: (lm) => {
       const ls = lm[LANDMARKS.LEFT_SHOULDER];
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
+      const le = lm[LANDMARKS.LEFT_ELBOW];
+      const re = lm[LANDMARKS.RIGHT_ELBOW];
       const lw = lm[LANDMARKS.LEFT_WRIST];
       const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const lh = lm[LANDMARKS.LEFT_HIP] || { x: ls ? ls.x : 0.45, y: (ls ? ls.y : 0.4) + 0.3 };
+      const rh = lm[LANDMARKS.RIGHT_HIP] || { x: rs ? rs.x : 0.55, y: (rs ? rs.y : 0.4) + 0.3 };
 
-      if (!lw || !rw || !ls || !rs) return { isMatch: false, feedback: 'Step into view!' };
+      if (!lw || !rw || !ls || !rs || !le || !re) return { isMatch: false, accuracy: 0, feedback: 'Step into view! 🌽' };
 
-      const leftUp = lw.y < ls.y - 0.08;
-      const rightDown = rw.y > rs.y + 0.10;
-      const rightUp = rw.y < rs.y - 0.08;
-      const leftDown = lw.y > ls.y + 0.10;
+      // Case A: Left arm up, Right arm down on hip
+      const sLUpShoulder = scoreAngleRange(calculateJointAngle(lh, ls, le), 150, 180, 30);
+      const sLUpElbow = scoreAngleRange(calculateJointAngle(ls, le, lw), 150, 180, 30);
+      const sRDownShoulder = scoreAngleRange(calculateJointAngle(rh, rs, re), 15, 60, 30);
+      const sRDownElbow = scoreAngleRange(calculateJointAngle(rs, re, rw), 45, 125, 35);
+      const avgA = (sLUpShoulder + sLUpElbow + sRDownShoulder + sRDownElbow) / 4;
 
-      if ((leftUp && rightDown) || (rightUp && leftDown)) {
+      // Case B: Right arm up, Left arm down on hip
+      const sRUpShoulder = scoreAngleRange(calculateJointAngle(rh, rs, re), 150, 180, 30);
+      const sRUpElbow = scoreAngleRange(calculateJointAngle(rs, re, rw), 150, 180, 30);
+      const sLDownShoulder = scoreAngleRange(calculateJointAngle(lh, ls, le), 15, 60, 30);
+      const sLDownElbow = scoreAngleRange(calculateJointAngle(ls, le, lw), 45, 125, 35);
+      const avgB = (sRUpShoulder + sRUpElbow + sLDownShoulder + sLDownElbow) / 4;
+
+      const accuracy = Math.round(Math.max(avgA, avgB) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'TALL GOLDEN CORNSTALK! Hold frozen! 🌽'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Reach ONE hand up to the sun and keep the other hand on your hip! 🌽'
       };
     }
@@ -757,24 +1125,51 @@ export const VEGETABLE_POSES = [
     evaluate: (lm) => {
       const ls = lm[LANDMARKS.LEFT_SHOULDER];
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
+      const le = lm[LANDMARKS.LEFT_ELBOW];
+      const re = lm[LANDMARKS.RIGHT_ELBOW];
       const lw = lm[LANDMARKS.LEFT_WRIST];
       const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const lh = lm[LANDMARKS.LEFT_HIP] || { x: ls ? ls.x : 0.45, y: (ls ? ls.y : 0.4) + 0.3 };
+      const rh = lm[LANDMARKS.RIGHT_HIP] || { x: rs ? rs.x : 0.55, y: (rs ? rs.y : 0.4) + 0.3 };
 
-      if (!lw || !rw || !ls || !rs) return { isMatch: false, feedback: 'Step into view!' };
+      if (!lw || !rw || !ls || !rs || !le || !re) return { isMatch: false, accuracy: 0, feedback: 'Step into view! 🫛' };
 
-      // Wrists near chest (below shoulders, above hips) and close together
-      const chestLevel = lw.y > ls.y && rw.y > rs.y && lw.y < ls.y + 0.35 && rw.y < rs.y + 0.35;
-      const handsTogether = Math.hypot(lw.x - rw.x, lw.y - rw.y) < 0.16;
+      // Shoulders adducted near chest: [20° - 60°]
+      const leftShoulderAngle = calculateJointAngle(lh, ls, le);
+      const scoreLS = scoreAngleRange(leftShoulderAngle, 20, 60, 25);
 
-      if (chestLevel && handsTogether) {
+      const rightShoulderAngle = calculateJointAngle(rh, rs, re);
+      const scoreRS = scoreAngleRange(rightShoulderAngle, 20, 60, 25);
+
+      // Elbows bent in prayer: [40° - 110°]
+      const leftElbowAngle = calculateJointAngle(ls, le, lw);
+      const scoreLE = scoreAngleRange(leftElbowAngle, 40, 110, 25);
+
+      const rightElbowAngle = calculateJointAngle(rs, re, rw);
+      const scoreRE = scoreAngleRange(rightElbowAngle, 40, 110, 25);
+
+      // Wrists together in prayer
+      const distWrists = Math.hypot(lw.x - rw.x, lw.y - rw.y);
+      const scoreWristsTogether = scoreAngleRange(distWrists * 100, 0, 12, 10);
+
+      // Chest level (below shoulders, above hips)
+      const scoreChestLevel = (lw.y > ls.y && rw.y > rs.y && lw.y < lh.y && rw.y < rh.y) ? 1.0 : 0.5;
+
+      const scores = [scoreLS, scoreRS, scoreLE, scoreRE, scoreWristsTogether, scoreChestLevel];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'COZY PEA POD! Stay peaceful and frozen! 🫛'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Bring your palms together at your chest like a cozy pea pod! 🫛'
       };
     }
@@ -810,26 +1205,52 @@ export const VEGETABLE_POSES = [
     evaluate: (lm) => {
       const ls = lm[LANDMARKS.LEFT_SHOULDER];
       const rs = lm[LANDMARKS.RIGHT_SHOULDER];
-      const lw = lm[LANDMARKS.LEFT_WRIST];
-      const rw = lm[LANDMARKS.RIGHT_WRIST];
       const le = lm[LANDMARKS.LEFT_ELBOW];
       const re = lm[LANDMARKS.RIGHT_ELBOW];
+      const lw = lm[LANDMARKS.LEFT_WRIST];
+      const rw = lm[LANDMARKS.RIGHT_WRIST];
+      const lh = lm[LANDMARKS.LEFT_HIP] || { x: ls ? ls.x : 0.45, y: (ls ? ls.y : 0.4) + 0.3 };
+      const rh = lm[LANDMARKS.RIGHT_HIP] || { x: rs ? rs.x : 0.55, y: (rs ? rs.y : 0.4) + 0.3 };
 
-      if (!lw || !rw || !ls || !rs || !le || !re) return { isMatch: false, feedback: 'Step into view!' };
+      if (!lw || !rw || !ls || !rs || !le || !re) return { isMatch: false, accuracy: 0, feedback: 'Step into view! 🎃' };
 
-      // Elbows out wide, wrists in front of chest
-      const elbowsWide = Math.abs(le.x - re.x) > Math.abs(ls.x - rs.x) * 1.3;
-      const wristsNearCenter = Math.abs(lw.x - rw.x) < 0.35 && lw.y > ls.y - 0.05 && rw.y > rs.y - 0.05;
+      // Shoulders rounded forward: [55° - 95°]
+      const leftShoulderAngle = calculateJointAngle(lh, ls, le);
+      const scoreLS = scoreAngleRange(leftShoulderAngle, 55, 95, 25);
 
-      if (elbowsWide && wristsNearCenter) {
+      const rightShoulderAngle = calculateJointAngle(rh, rs, re);
+      const scoreRS = scoreAngleRange(rightShoulderAngle, 55, 95, 25);
+
+      // Elbows rounded in a circle: [20° - 85°]
+      const leftElbowAngle = calculateJointAngle(ls, le, lw);
+      const scoreLE = scoreAngleRange(leftElbowAngle, 20, 85, 25);
+
+      const rightElbowAngle = calculateJointAngle(rs, re, rw);
+      const scoreRE = scoreAngleRange(rightElbowAngle, 20, 85, 25);
+
+      // Elbows wider than shoulders
+      const shoulderWidth = Math.abs(ls.x - rs.x);
+      const elbowWidth = Math.abs(le.x - re.x);
+      const scoreElbowsWide = Math.min(1.0, Math.max(0, (elbowWidth / shoulderWidth - 1.1) / 0.4));
+
+      // Wrists in front near center
+      const scoreWristsCenter = scoreAngleRange(Math.abs(lw.x - rw.x) * 100, 5, 25, 12);
+
+      const scores = [scoreLS, scoreRS, scoreLE, scoreRE, scoreElbowsWide, scoreWristsCenter];
+      const accuracy = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100);
+      const isMatch = accuracy >= 85;
+
+      if (isMatch) {
         return {
           isMatch: true,
+          accuracy,
           feedback: 'ROUND PUMPKIN POWER! Hold it for 5 seconds! 🎃'
         };
       }
 
       return {
         isMatch: false,
+        accuracy,
         feedback: 'Round your arms in front like holding a giant pumpkin! 🎃'
       };
     }

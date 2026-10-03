@@ -967,7 +967,7 @@ class FreezeDanceGame {
   /**
    * Check if a grabbed letter has been brought into the active drop slot (Age 6-8)
    */
-  checkGrabbedLetterDropProximity(letterEl, letter) {
+  checkGrabbedLetterDropProximity(letterEl, letter, handViewportX, handViewportY) {
     if (this.potsLocked || !this.dom.potsDropZone) return false;
 
     const activeSlot = document.getElementById(`drop-slot-${this.nextDropSlotIndex}`);
@@ -976,12 +976,23 @@ class FreezeDanceGame {
     const slotRect = activeSlot.getBoundingClientRect();
     const letterRect = letterEl.getBoundingClientRect();
 
-    // Intersection test
-    const dx = (letterRect.left + letterRect.width / 2) - (slotRect.left + slotRect.width / 2);
-    const dy = (letterRect.top + letterRect.height / 2) - (slotRect.top + slotRect.height / 2);
-    const dist = Math.hypot(dx, dy);
+    // Intersection & proximity test between letter and drop slot
+    const letterCenterX = letterRect.left + letterRect.width / 2;
+    const letterCenterY = letterRect.top + letterRect.height / 2;
+    const slotCenterX = slotRect.left + slotRect.width / 2;
+    const slotCenterY = slotRect.top + slotRect.height / 2;
+    const distLetter = Math.hypot(letterCenterX - slotCenterX, letterCenterY - slotCenterY);
 
-    if (dist < 65) {
+    const isHandOverSlot = (
+      handViewportX !== undefined &&
+      handViewportY !== undefined &&
+      handViewportX >= slotRect.left - 25 &&
+      handViewportX <= slotRect.right + 25 &&
+      handViewportY >= slotRect.top - 25 &&
+      handViewportY <= slotRect.bottom + 25
+    );
+
+    if (distLetter < 70 || isHandOverSlot) {
       const currentItem = this.currentPotWords[this.potWordIndex];
       const expectedLetter = currentItem.word[this.nextDropSlotIndex];
 
@@ -1153,80 +1164,140 @@ class FreezeDanceGame {
 
   /**
    * Collision and Hand Coordinate Tracking for Activity 2
+   * - Strict Viewport Bounding Box: eliminates ghost collisions by ensuring hand falls strictly inside potRect.
+   * - Unified Hand Indexing: primary active hand (whichever is visible, prioritizing right hand, or multiHandLandmarks[0])
+   *   handles BOTH breaking pots and grabbing/dragging letters.
    */
-  checkPotsCollision(landmarks) {
-    if (this.potsLocked || !landmarks || !this.dom.cameraContainer) return;
+  checkPotsCollision(landmarks, results) {
+    if (this.potsLocked || !this.dom.cameraContainer) return;
 
     const containerRect = this.dom.cameraContainer.getBoundingClientRect();
     if (!containerRect.width || !containerRect.height) return;
 
-    // Track wrists (15, 16) and index fingertips (19, 20)
+    // Collect all candidate hand points and identify the primary active hand
     const handPoints = [];
+    let primaryHand = null;
 
-    // Left hand
-    const lw = landmarks[LANDMARKS.LEFT_WRIST];
-    const li = landmarks[LANDMARKS.LEFT_INDEX];
-    if (lw && lw.visibility > 0.35) handPoints.push({ x: lw.x, y: lw.y, isLeft: true });
-    if (li && li.visibility > 0.35) handPoints.push({ x: li.x, y: li.y, isLeft: true });
-
-    // Right hand
-    const rw = landmarks[LANDMARKS.RIGHT_WRIST];
-    const ri = landmarks[LANDMARKS.RIGHT_INDEX];
-    if (rw && rw.visibility > 0.35) handPoints.push({ x: rw.x, y: rw.y, isLeft: false });
-    if (ri && ri.visibility > 0.35) handPoints.push({ x: ri.x, y: ri.y, isLeft: false });
-
-    // Update hand visual trackers
-    let leftScreenPoint = null;
-    let rightScreenPoint = null;
-
-    if (lw && lw.visibility > 0.35) {
-      leftScreenPoint = { x: (1.0 - lw.x) * 100, y: lw.y * 100 };
-    }
-    if (rw && rw.visibility > 0.35) {
-      rightScreenPoint = { x: (1.0 - rw.x) * 100, y: rw.y * 100 };
+    // 1. Check results.multiHandLandmarks if available
+    if (results && Array.isArray(results.multiHandLandmarks) && results.multiHandLandmarks.length > 0) {
+      for (let hIdx = 0; hIdx < results.multiHandLandmarks.length; hIdx++) {
+        const hand = results.multiHandLandmarks[hIdx];
+        if (hand && hand.length > 0) {
+          // Tip of index finger (landmark 8) or wrist (landmark 0)
+          const tip = hand[8] || hand[0];
+          const wrist = hand[0];
+          if (tip) handPoints.push({ x: tip.x, y: tip.y });
+          if (wrist && wrist !== tip) handPoints.push({ x: wrist.x, y: wrist.y });
+          if (hIdx === 0 && tip) {
+            primaryHand = { x: tip.x, y: tip.y, isRight: true };
+          }
+        }
+      }
     }
 
+    // 2. Pose landmarks (wrists: 15, 16; index fingers: 19, 20)
+    let rw = null, ri = null, lw = null, li = null;
+    let rightPoint = null;
+    let leftPoint = null;
+
+    if (landmarks && landmarks.length > 0) {
+      rw = landmarks[LANDMARKS.RIGHT_WRIST];
+      ri = landmarks[LANDMARKS.RIGHT_INDEX];
+      lw = landmarks[LANDMARKS.LEFT_WRIST];
+      li = landmarks[LANDMARKS.LEFT_INDEX];
+
+      const isRightActive = (rw && (rw.visibility || 1) > 0.35) || (ri && (ri.visibility || 1) > 0.35);
+      const isLeftActive = (lw && (lw.visibility || 1) > 0.35) || (li && (li.visibility || 1) > 0.35);
+
+      if (isRightActive) {
+        // Prefer index fingertip for precision if visible, else wrist
+        const pt = (ri && (ri.visibility || 1) > 0.35) ? ri : rw;
+        rightPoint = { x: pt.x, y: pt.y, isRight: true };
+        handPoints.push({ x: pt.x, y: pt.y, isRight: true });
+        if (rw && pt !== rw && (rw.visibility || 1) > 0.35) {
+          handPoints.push({ x: rw.x, y: rw.y, isRight: true });
+        }
+      }
+
+      if (isLeftActive) {
+        const pt = (li && (li.visibility || 1) > 0.35) ? li : lw;
+        leftPoint = { x: pt.x, y: pt.y, isRight: false };
+        handPoints.push({ x: pt.x, y: pt.y, isRight: false });
+        if (lw && pt !== lw && (lw.visibility || 1) > 0.35) {
+          handPoints.push({ x: lw.x, y: lw.y, isRight: false });
+        }
+      }
+
+      // Designate the primary active hand:
+      // Allow primary active hand (whichever hand is visible, prioritizing right hand, or multiHandLandmarks[0])
+      // to handle BOTH breaking pots and dragging letters so the child can complete using just their right hand!
+      if (!primaryHand) {
+        if (rightPoint) {
+          primaryHand = rightPoint;
+        } else if (leftPoint) {
+          primaryHand = leftPoint;
+        }
+      }
+    }
+
+    if (handPoints.length === 0 && !primaryHand) return;
+
+    // Update screen hand trackers for visual feedback
     if (this.dom.leftHandTracker) {
-      if (leftScreenPoint) {
+      if (leftPoint) {
         this.dom.leftHandTracker.classList.remove('hidden');
-        this.dom.leftHandTracker.style.left = `${leftScreenPoint.x}%`;
-        this.dom.leftHandTracker.style.top = `${leftScreenPoint.y}%`;
+        this.dom.leftHandTracker.style.left = `${(1.0 - leftPoint.x) * 100}%`;
+        this.dom.leftHandTracker.style.top = `${leftPoint.y * 100}%`;
       } else {
         this.dom.leftHandTracker.classList.add('hidden');
       }
     }
 
     if (this.dom.rightHandTracker) {
-      if (rightScreenPoint) {
+      if (rightPoint) {
         this.dom.rightHandTracker.classList.remove('hidden');
-        this.dom.rightHandTracker.style.left = `${rightScreenPoint.x}%`;
-        this.dom.rightHandTracker.style.top = `${rightScreenPoint.y}%`;
+        this.dom.rightHandTracker.style.left = `${(1.0 - rightPoint.x) * 100}%`;
+        this.dom.rightHandTracker.style.top = `${rightPoint.y * 100}%`;
+      } else if (primaryHand && !leftPoint) {
+        this.dom.rightHandTracker.classList.remove('hidden');
+        this.dom.rightHandTracker.style.left = `${(1.0 - primaryHand.x) * 100}%`;
+        this.dom.rightHandTracker.style.top = `${primaryHand.y * 100}%`;
       } else {
         this.dom.rightHandTracker.classList.add('hidden');
       }
     }
 
+    // Convert normalized hand coordinates (x, y) to browser's viewport dimensions
+    // Note: Video feed is mirrored horizontally (scaleX(-1)), so mirrored x is (1.0 - pt.x)
+    const viewportHandCoords = handPoints.map(pt => ({
+      viewportX: containerRect.left + (1.0 - pt.x) * containerRect.width,
+      viewportY: containerRect.top + pt.y * containerRect.height,
+    }));
+
     const currentItem = this.currentPotWords[this.potWordIndex];
     const numLetters = currentItem.word.length;
 
-    // 1. Check collision against unbroken pots
+    // 1. Strict 2D Bounding-Box Pot Collision:
+    // A pot should ONLY break if the hand coordinates fall strictly inside its actual getBoundingClientRect() boundaries.
     for (let i = 0; i < numLetters; i++) {
       if (this.potsState[i]) continue; // already broken
 
       const potEl = document.getElementById(`pot-slot-${i}`);
       if (!potEl) continue;
 
-      const potRect = potEl.getBoundingClientRect();
-      const potCenterX = potRect.left - containerRect.left + potRect.width / 2;
-      const potCenterY = potRect.top - containerRect.top + potRect.height / 2;
-      const hitRadius = Math.max(65, Math.min(potRect.width, potRect.height) * 0.7);
+      const potGraphic = document.getElementById(`pot-graphic-${i}`);
+      const targetEl = (potGraphic && !potGraphic.classList.contains('hidden')) ? potGraphic : potEl;
+      const potRect = targetEl.getBoundingClientRect();
 
-      for (const pt of handPoints) {
-        const handPxX = (1.0 - pt.x) * containerRect.width;
-        const handPxY = pt.y * containerRect.height;
+      for (const { viewportX, viewportY } of viewportHandCoords) {
+        const isStrictlyInside = (
+          viewportX >= potRect.left &&
+          viewportX <= potRect.right &&
+          viewportY >= potRect.top &&
+          viewportY <= potRect.bottom
+        );
 
-        const distance = Math.hypot(handPxX - potCenterX, handPxY - potCenterY);
-        if (distance < hitRadius) {
+        if (isStrictlyInside) {
           this.hitPot(i);
           break;
         }
@@ -1234,25 +1305,33 @@ class FreezeDanceGame {
     }
 
     // 2. AGE 6-8: Hand Tracking Letter Grab & Drag
-    if (this.potsAgeGroup === AGE_GROUPS.AGE_6_8 && handPoints.length > 0) {
-      // Pick the primary active hand (lowest Y / closest to interaction area)
-      const primaryHand = handPoints[0];
+    // Primary active hand handles BOTH breaking pots and dragging letters!
+    if (this.potsAgeGroup === AGE_GROUPS.AGE_6_8 && primaryHand) {
+      const primaryViewportX = containerRect.left + (1.0 - primaryHand.x) * containerRect.width;
+      const primaryViewportY = containerRect.top + primaryHand.y * containerRect.height;
       const handPxX = (1.0 - primaryHand.x) * containerRect.width;
       const handPxY = primaryHand.y * containerRect.height;
 
       if (!this.grabbedLetter) {
         // Proximity detection to unplaced scattered letters
         for (const letterEl of this.scatteredLetters) {
-          const letterLeft = parseFloat(letterEl.style.left) || 0;
-          const letterTop = parseFloat(letterEl.style.top) || 0;
-          const dist = Math.hypot(handPxX - (letterLeft + 29), handPxY - (letterTop + 29));
+          const letterRect = letterEl.getBoundingClientRect();
+          const letterCenterX = letterRect.left + letterRect.width / 2;
+          const letterCenterY = letterRect.top + letterRect.height / 2;
+          const distToCenter = Math.hypot(primaryViewportX - letterCenterX, primaryViewportY - letterCenterY);
 
-          if (dist < 50) {
-            // Grab letter!
+          const isOverLetter = (
+            primaryViewportX >= letterRect.left - 15 &&
+            primaryViewportX <= letterRect.right + 15 &&
+            primaryViewportY >= letterRect.top - 15 &&
+            primaryViewportY <= letterRect.bottom + 15
+          ) || distToCenter < 55;
+
+          if (isOverLetter) {
             this.grabbedLetter = {
               element: letterEl,
               letter: letterEl.dataset.letter,
-              id: letterEl.dataset.letterId
+              id: letterEl.dataset.letterId,
             };
             letterEl.classList.add('is-grabbed');
             this.dom.feedbackText.textContent = `Grabbing '${letterEl.dataset.letter}'! Move your hand to the bottom drop slot!`;
@@ -1260,14 +1339,16 @@ class FreezeDanceGame {
           }
         }
       } else {
-        // Drag letter following hand position
+        // Drag letter following primary active hand position
         const letterEl = this.grabbedLetter.element;
         if (letterEl && letterEl.parentNode) {
-          letterEl.style.left = `${handPxX - 29}px`;
-          letterEl.style.top = `${handPxY - 29}px`;
+          const halfW = (letterEl.offsetWidth || 58) / 2;
+          const halfH = (letterEl.offsetHeight || 58) / 2;
+          letterEl.style.left = `${handPxX - halfW}px`;
+          letterEl.style.top = `${handPxY - halfH}px`;
 
           // Test proximity to active drop slot
-          this.checkGrabbedLetterDropProximity(letterEl, this.grabbedLetter.letter);
+          this.checkGrabbedLetterDropProximity(letterEl, this.grabbedLetter.letter, primaryViewportX, primaryViewportY);
         } else {
           this.grabbedLetter = null;
         }
@@ -1606,9 +1687,9 @@ class FreezeDanceGame {
   /**
    * MediaPipe Pose landmark reception
    */
-  onPoseLandmarks(landmarks) {
+  onPoseLandmarks(landmarks, results) {
     if (this.gameMode === GAME_MODES.SHOOT_THE_POTS) {
-      this.checkPotsCollision(landmarks);
+      this.checkPotsCollision(landmarks, results);
       return;
     }
 
@@ -1616,6 +1697,15 @@ class FreezeDanceGame {
       if (!landmarks && this.currentPhase === PHASES.FREEZE) {
         this.dom.feedbackText.textContent = 'Step into view so the mirror can verify your pose!';
         this.tracker.setMatchingState(false);
+        // Form broken (out of camera view): immediately reset hold timer
+        if (this.currentHoldTime > 0) {
+          this.currentHoldTime = 0.0;
+          this.lastSecondTicked = 0;
+          this.dom.holdProgressBar.style.width = '0%';
+          const circumference = 2 * Math.PI * 40;
+          this.dom.holdProgressRing.style.strokeDashoffset = circumference;
+          this.dom.holdCountdownText.textContent = `${Math.ceil(this.holdDurationRequired)}`;
+        }
       }
       return;
     }
@@ -1677,13 +1767,14 @@ class FreezeDanceGame {
         this.dom.feedbackText.textContent = evaluation.feedback;
         this.dom.feedbackBanner.className = 'px-4 py-2 rounded-2xl bg-white/90 border border-stone-200 text-slate-800 text-sm font-semibold transition-all duration-300 shadow-md text-center max-w-md';
 
+        // Form broken: immediately reset hold timer to 0
         if (this.currentHoldTime > 0) {
-          this.currentHoldTime = Math.max(0, this.currentHoldTime - dt * 2.5);
-          const progressPercent = (this.currentHoldTime / this.holdDurationRequired) * 100;
-          this.dom.holdProgressBar.style.width = `${progressPercent}%`;
+          this.currentHoldTime = 0.0;
+          this.lastSecondTicked = 0;
+          this.dom.holdProgressBar.style.width = '0%';
           const circumference = 2 * Math.PI * 40;
-          const strokeDashoffset = circumference - (circumference * progressPercent) / 100;
-          this.dom.holdProgressRing.style.strokeDashoffset = strokeDashoffset;
+          this.dom.holdProgressRing.style.strokeDashoffset = circumference;
+          this.dom.holdCountdownText.textContent = `${Math.ceil(this.holdDurationRequired)}`;
         }
       }
     }
@@ -2129,10 +2220,12 @@ class FreezeDanceGame {
     } else if (poseId === 'fruit_banana') {
       lm[11] = { x: 0.44, y: 0.42, z: 0, visibility: 0.99 };
       lm[12] = { x: 0.60, y: 0.40, z: 0, visibility: 0.99 };
-      lm[13] = { x: 0.42, y: 0.22, z: 0, visibility: 0.99 };
+      lm[13] = { x: 0.40, y: 0.22, z: 0, visibility: 0.99 };
       lm[14] = { x: 0.54, y: 0.20, z: 0, visibility: 0.99 };
-      lm[15] = { x: 0.28, y: 0.12, z: 0, visibility: 0.99 };
-      lm[16] = { x: 0.34, y: 0.12, z: 0, visibility: 0.99 };
+      lm[15] = { x: 0.36, y: 0.06, z: 0, visibility: 0.99 };
+      lm[16] = { x: 0.48, y: 0.05, z: 0, visibility: 0.99 };
+      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
+      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
     } else if (poseId === 'fruit_starfruit') {
       lm[11] = { x: 0.42, y: 0.38, z: 0, visibility: 0.99 };
       lm[12] = { x: 0.58, y: 0.38, z: 0, visibility: 0.99 };
@@ -2140,6 +2233,10 @@ class FreezeDanceGame {
       lm[14] = { x: 0.74, y: 0.24, z: 0, visibility: 0.99 };
       lm[15] = { x: 0.10, y: 0.10, z: 0, visibility: 0.99 };
       lm[16] = { x: 0.90, y: 0.10, z: 0, visibility: 0.99 };
+      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
+      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
+      lm[25] = { x: 0.34, y: 0.80, z: 0, visibility: 0.99 };
+      lm[26] = { x: 0.66, y: 0.80, z: 0, visibility: 0.99 };
       lm[27] = { x: 0.22, y: 0.96, z: 0, visibility: 0.99 };
       lm[28] = { x: 0.78, y: 0.96, z: 0, visibility: 0.99 };
     } else if (poseId === 'fruit_apple') {
@@ -2152,6 +2249,10 @@ class FreezeDanceGame {
       lm[16] = { x: 0.20, y: 0.68, z: 0, visibility: 0.99 };
       lm[23] = { x: 0.68, y: 0.62, z: 0, visibility: 0.99 };
       lm[24] = { x: 0.72, y: 0.58, z: 0, visibility: 0.99 };
+      lm[25] = { x: 0.56, y: 0.78, z: 0, visibility: 0.99 };
+      lm[26] = { x: 0.60, y: 0.74, z: 0, visibility: 0.99 };
+      lm[27] = { x: 0.74, y: 0.80, z: 0, visibility: 0.99 };
+      lm[28] = { x: 0.78, y: 0.76, z: 0, visibility: 0.99 };
     } else if (poseId === 'fruit_watermelon') {
       lm[0] = { x: 0.50, y: 0.32, z: 0, visibility: 0.99 };
       lm[11] = { x: 0.42, y: 0.46, z: 0, visibility: 0.99 };
@@ -2167,30 +2268,51 @@ class FreezeDanceGame {
       lm[27] = { x: 0.12, y: 0.84, z: 0, visibility: 0.99 };
       lm[28] = { x: 0.88, y: 0.84, z: 0, visibility: 0.99 };
     } else if (poseId === 'veg_carrot') {
-      lm[13] = { x: 0.42, y: 0.20, z: 0, visibility: 0.99 };
-      lm[14] = { x: 0.58, y: 0.20, z: 0, visibility: 0.99 };
-      lm[15] = { x: 0.49, y: 0.08, z: 0, visibility: 0.99 };
-      lm[16] = { x: 0.51, y: 0.08, z: 0, visibility: 0.99 };
+      lm[0] = { x: 0.50, y: 0.28, z: 0, visibility: 0.99 };
+      lm[11] = { x: 0.42, y: 0.42, z: 0, visibility: 0.99 };
+      lm[12] = { x: 0.58, y: 0.42, z: 0, visibility: 0.99 };
+      lm[13] = { x: 0.44, y: 0.22, z: 0, visibility: 0.99 };
+      lm[14] = { x: 0.56, y: 0.22, z: 0, visibility: 0.99 };
+      lm[15] = { x: 0.48, y: 0.06, z: 0, visibility: 0.99 };
+      lm[16] = { x: 0.52, y: 0.06, z: 0, visibility: 0.99 };
+      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
+      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
     } else if (poseId === 'veg_broccoli') {
-      lm[13] = { x: 0.24, y: 0.42, z: 0, visibility: 0.99 };
-      lm[14] = { x: 0.76, y: 0.42, z: 0, visibility: 0.99 };
+      lm[11] = { x: 0.42, y: 0.40, z: 0, visibility: 0.99 };
+      lm[12] = { x: 0.58, y: 0.40, z: 0, visibility: 0.99 };
+      lm[13] = { x: 0.24, y: 0.40, z: 0, visibility: 0.99 };
+      lm[14] = { x: 0.76, y: 0.40, z: 0, visibility: 0.99 };
       lm[15] = { x: 0.24, y: 0.16, z: 0, visibility: 0.99 };
       lm[16] = { x: 0.76, y: 0.16, z: 0, visibility: 0.99 };
+      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
+      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
     } else if (poseId === 'veg_corn') {
-      lm[13] = { x: 0.30, y: 0.22, z: 0, visibility: 0.99 };
+      lm[11] = { x: 0.42, y: 0.40, z: 0, visibility: 0.99 };
+      lm[12] = { x: 0.58, y: 0.40, z: 0, visibility: 0.99 };
+      lm[13] = { x: 0.38, y: 0.20, z: 0, visibility: 0.99 };
       lm[14] = { x: 0.68, y: 0.52, z: 0, visibility: 0.99 };
-      lm[15] = { x: 0.26, y: 0.08, z: 0, visibility: 0.99 };
-      lm[16] = { x: 0.56, y: 0.66, z: 0, visibility: 0.99 };
+      lm[15] = { x: 0.36, y: 0.05, z: 0, visibility: 0.99 };
+      lm[16] = { x: 0.56, y: 0.64, z: 0, visibility: 0.99 };
+      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
+      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
     } else if (poseId === 'veg_pea') {
+      lm[11] = { x: 0.42, y: 0.38, z: 0, visibility: 0.99 };
+      lm[12] = { x: 0.58, y: 0.38, z: 0, visibility: 0.99 };
       lm[13] = { x: 0.34, y: 0.48, z: 0, visibility: 0.99 };
       lm[14] = { x: 0.66, y: 0.48, z: 0, visibility: 0.99 };
-      lm[15] = { x: 0.48, y: 0.50, z: 0, visibility: 0.99 };
-      lm[16] = { x: 0.52, y: 0.50, z: 0, visibility: 0.99 };
+      lm[15] = { x: 0.48, y: 0.48, z: 0, visibility: 0.99 };
+      lm[16] = { x: 0.52, y: 0.48, z: 0, visibility: 0.99 };
+      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
+      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
     } else if (poseId === 'veg_pumpkin') {
+      lm[11] = { x: 0.42, y: 0.38, z: 0, visibility: 0.99 };
+      lm[12] = { x: 0.58, y: 0.38, z: 0, visibility: 0.99 };
       lm[13] = { x: 0.22, y: 0.46, z: 0, visibility: 0.99 };
       lm[14] = { x: 0.78, y: 0.46, z: 0, visibility: 0.99 };
       lm[15] = { x: 0.42, y: 0.48, z: 0, visibility: 0.99 };
       lm[16] = { x: 0.58, y: 0.48, z: 0, visibility: 0.99 };
+      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
+      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
     } else {
       lm[13] = { x: 0.36, y: 0.24, z: 0, visibility: 0.99 };
       lm[15] = { x: 0.32, y: 0.10, z: 0, visibility: 0.99 };

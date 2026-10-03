@@ -291,11 +291,11 @@ export class PoseTracker {
     if (landmarks && landmarks.length > 0) {
       this.drawMagicSkeleton(landmarks);
       if (this.onLandmarks) {
-        this.onLandmarks(landmarks);
+        this.onLandmarks(landmarks, results);
       }
     } else {
       if (this.onLandmarks) {
-        this.onLandmarks(null);
+        this.onLandmarks(null, results);
       }
     }
   }
@@ -436,7 +436,7 @@ export class PoseTracker {
     if (this.simulatedLandmarks) {
       this.drawMagicSkeleton(this.simulatedLandmarks);
       if (this.onLandmarks) {
-        this.onLandmarks(this.simulatedLandmarks);
+        this.onLandmarks(this.simulatedLandmarks, { poseLandmarks: this.simulatedLandmarks });
       }
     }
   }
