@@ -17,7 +17,8 @@ export const GAME_MODES = {
   FREEZE_DANCE: 'FREEZE_DANCE',
   FRUIT_YOGA: 'FRUIT_YOGA',
   VEGETABLE_YOGA: 'VEGETABLE_YOGA',
-  SHOOT_THE_POTS: 'SHOOT_THE_POTS'
+  SHOOT_THE_POTS: 'SHOOT_THE_POTS',
+  SHOW_AND_TELL_ART: 'SHOW_AND_TELL_ART'
 };
 
 export const AGE_GROUPS = {
@@ -53,6 +54,17 @@ export const AGE_6_8_WORDS = [
   { word: 'ZEBRA', emoji: '🦓', clue: 'Striking black and white striped friend!' },
 ];
 
+export const ART_PROMPTS = [
+  { id: 'happy_tree', prompt: 'Draw a happy tree!', title: 'Happy Tree', emoji: '🌳', hint: 'Draw a big friendly tree with green leaves, branches and a smiling face!' },
+  { id: 'smiling_sun', prompt: 'Draw a smiling sun!', title: 'Smiling Sun', emoji: '☀️', hint: 'Draw a bright warm sun in the sky with golden rays and a joyful smile!' },
+  { id: 'cute_puppy', prompt: 'Draw a cute puppy!', title: 'Cute Puppy', emoji: '🐶', hint: 'Draw a playful puppy with floppy ears, a wagging tail and friendly eyes!' },
+  { id: 'sweet_flower', prompt: 'Draw a blooming flower!', title: 'Sweet Flower', emoji: '🌸', hint: 'Draw colorful flower petals dancing in the forest breeze!' },
+  { id: 'happy_rainbow', prompt: 'Draw a magical rainbow!', title: 'Magical Rainbow', emoji: '🌈', hint: 'Use red, orange, yellow, green, blue and purple to make an arc in the sky!' },
+  { id: 'forest_butterfly', prompt: 'Draw a fluttering butterfly!', title: 'Forest Butterfly', emoji: '🦋', hint: 'Draw beautiful wings with colorful dots and patterns!' },
+  { id: 'shining_star', prompt: 'Draw a shining star!', title: 'Shining Star', emoji: '⭐', hint: 'Draw a bright twinkling star shining over the enchanted forest!' },
+  { id: 'cute_fish', prompt: 'Draw a happy swimming fish!', title: 'Happy Fish', emoji: '🐟', hint: 'Draw a friendly little fish with wavy fins blowing bubbles in the pond!' },
+];
+
 export const PHASES = {
   IDLE: 'IDLE',
   ACTION: 'ACTION',           // 5 seconds of jumping / dancing
@@ -83,6 +95,13 @@ class FreezeDanceGame {
     this.grabbedLetter = null; // { element, letter, letterId }
     this.nextDropSlotIndex = 0; // Current slot awaiting letter in spelling order
     this.scatteredLetters = []; // List of scattered letter DOM elements
+    
+    // Activity 3: Show & Tell Art state
+    this.artPromptIndex = 0;
+    this.artCapturedDataUrl = null;
+    this.artCountdownTimer = null;
+    this.artCountdownSeconds = 5;
+    this.artPhase = 'OFFLINE'; // 'OFFLINE' | 'SNAPSHOT' | 'SHOWCASE'
     
     // Phase timers
     this.actionDuration = 5.0; // 5 seconds
@@ -241,6 +260,44 @@ class FreezeDanceGame {
       // Initial Start Screen Modal & Big Colorful Start Button
       initialStartModal: document.getElementById('initial-start-modal'),
       initialStartBtn: document.getElementById('initial-start-btn'),
+
+      // Activity 3: Show & Tell Art DOM Elements
+      btnModeArt: document.getElementById('btn-mode-art'),
+      artQuestHud: document.getElementById('art-quest-hud'),
+      artPromptBadge: document.getElementById('art-prompt-badge'),
+      artHudSubtitle: document.getElementById('art-hud-subtitle'),
+
+      // Left Card Art elements
+      artModeView: document.getElementById('art-mode-view'),
+      artPromptCountBadge: document.getElementById('art-prompt-count-badge'),
+      artPromptEmoji: document.getElementById('art-prompt-emoji'),
+      artPromptTitle: document.getElementById('art-prompt-title'),
+      artPromptHint: document.getElementById('art-prompt-hint'),
+      artPuppyBubble: document.getElementById('art-puppy-bubble'),
+      btnArtPrevPrompt: document.getElementById('btn-art-prev-prompt'),
+      btnArtNextPrompt: document.getElementById('btn-art-next-prompt'),
+      btnArtReadyLeft: document.getElementById('btn-art-ready-left'),
+
+      // Right Card Art Overlay & Screens
+      artGameOverlay: document.getElementById('art-game-overlay'),
+      artOfflineScreen: document.getElementById('art-offline-screen'),
+      artOfflineEmoji: document.getElementById('art-offline-emoji'),
+      artOfflinePrompt: document.getElementById('art-offline-prompt'),
+      btnArtReady: document.getElementById('btn-art-ready'),
+      btnArtShufflePrompt: document.getElementById('btn-art-shuffle-prompt'),
+
+      artSnapshotScreen: document.getElementById('art-snapshot-screen'),
+      artCountdownNumber: document.getElementById('art-countdown-number'),
+      artCountdownBar: document.getElementById('art-countdown-bar'),
+      artCameraFlash: document.getElementById('art-camera-flash'),
+
+      artShowcaseScreen: document.getElementById('art-showcase-screen'),
+      artSnapshotImg: document.getElementById('art-snapshot-img'),
+      artPolaroidTitle: document.getElementById('art-polaroid-title'),
+      artPolaroidDate: document.getElementById('art-polaroid-date'),
+      btnArtRetake: document.getElementById('btn-art-retake'),
+      btnArtDownload: document.getElementById('btn-art-download'),
+      btnArtBackMenu: document.getElementById('btn-art-back-menu'),
     };
 
     this.init();
@@ -332,6 +389,35 @@ class FreezeDanceGame {
     }
     if (this.dom.nextPotWordBtn) {
       this.dom.nextPotWordBtn.addEventListener('click', () => this.nextPotWord());
+    }
+
+    // Activity 3: Show & Tell Art Event Listeners
+    if (this.dom.btnModeArt) {
+      this.dom.btnModeArt.addEventListener('click', () => this.selectMode(GAME_MODES.SHOW_AND_TELL_ART));
+    }
+    if (this.dom.btnArtReady) {
+      this.dom.btnArtReady.addEventListener('click', () => this.startArtSnapshotPhase());
+    }
+    if (this.dom.btnArtReadyLeft) {
+      this.dom.btnArtReadyLeft.addEventListener('click', () => this.startArtSnapshotPhase());
+    }
+    if (this.dom.btnArtShufflePrompt) {
+      this.dom.btnArtShufflePrompt.addEventListener('click', () => this.nextArtPrompt());
+    }
+    if (this.dom.btnArtPrevPrompt) {
+      this.dom.btnArtPrevPrompt.addEventListener('click', () => this.prevArtPrompt());
+    }
+    if (this.dom.btnArtNextPrompt) {
+      this.dom.btnArtNextPrompt.addEventListener('click', () => this.nextArtPrompt());
+    }
+    if (this.dom.btnArtRetake) {
+      this.dom.btnArtRetake.addEventListener('click', () => this.startArtSnapshotPhase());
+    }
+    if (this.dom.btnArtDownload) {
+      this.dom.btnArtDownload.addEventListener('click', () => this.downloadArtSnapshot());
+    }
+    if (this.dom.btnArtBackMenu) {
+      this.dom.btnArtBackMenu.addEventListener('click', () => this.openModeSelectionModal());
     }
 
     // Celebration modal instant restart button
@@ -433,6 +519,10 @@ class FreezeDanceGame {
       clearTimeout(this.potsNewRoundTimer);
       this.potsNewRoundTimer = null;
     }
+    if (this.artCountdownTimer) {
+      clearInterval(this.artCountdownTimer);
+      this.artCountdownTimer = null;
+    }
     this.potsLocked = false;
     soundEngine.stopDanceBeat();
 
@@ -449,14 +539,17 @@ class FreezeDanceGame {
       this.dom.phaseHudContainer.classList.remove('hidden');
       this.dom.yogaQuestHud.classList.add('hidden');
       this.dom.potsQuestHud.classList.add('hidden');
+      if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
       this.dom.itemWordBanner.classList.add('hidden');
 
       // Left Card: Pose View
       this.dom.poseModeView.classList.remove('hidden');
       this.dom.potsModeView.classList.add('hidden');
+      if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
 
-      // Right Card: Hide Pots Overlay
+      // Right Card: Hide Pots & Art Overlay
       this.dom.potsGameOverlay.classList.add('hidden');
+      if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>✨</span> Simulate Freeze Pose';
 
@@ -474,6 +567,7 @@ class FreezeDanceGame {
 
       this.dom.phaseHudContainer.classList.add('hidden');
       this.dom.potsQuestHud.classList.add('hidden');
+      if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
       this.dom.yogaQuestHud.classList.remove('hidden');
       this.dom.yogaQuestIcon.textContent = '🍎';
       this.dom.yogaQuestTitle.textContent = 'Fruit Yoga Adventure';
@@ -482,7 +576,9 @@ class FreezeDanceGame {
 
       this.dom.poseModeView.classList.remove('hidden');
       this.dom.potsModeView.classList.add('hidden');
+      if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
       this.dom.potsGameOverlay.classList.add('hidden');
+      if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>✨</span> Simulate Freeze Pose';
 
@@ -500,6 +596,7 @@ class FreezeDanceGame {
 
       this.dom.phaseHudContainer.classList.add('hidden');
       this.dom.potsQuestHud.classList.add('hidden');
+      if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
       this.dom.yogaQuestHud.classList.remove('hidden');
       this.dom.yogaQuestIcon.textContent = '🥕';
       this.dom.yogaQuestTitle.textContent = 'Vegetable Yoga Adventure';
@@ -508,7 +605,9 @@ class FreezeDanceGame {
 
       this.dom.poseModeView.classList.remove('hidden');
       this.dom.potsModeView.classList.add('hidden');
+      if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
       this.dom.potsGameOverlay.classList.add('hidden');
+      if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>✨</span> Simulate Freeze Pose';
 
@@ -523,19 +622,45 @@ class FreezeDanceGame {
 
       this.dom.phaseHudContainer.classList.add('hidden');
       this.dom.yogaQuestHud.classList.add('hidden');
+      if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
       this.dom.potsQuestHud.classList.remove('hidden');
 
       this.dom.poseModeView.classList.add('hidden');
       this.dom.potsModeView.classList.remove('hidden');
+      if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
 
       this.hideAllOverlays();
       this.dom.potsGameOverlay.classList.remove('hidden');
+      if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>💥</span> Smash Next Pot';
       this.dom.gameLoopIcon.textContent = '⏸️';
       this.dom.gameLoopText.textContent = 'Pause Game';
 
       this.startShootThePotsMode();
+    } else if (mode === GAME_MODES.SHOW_AND_TELL_ART) {
+      this.dom.currentModeBadge.textContent = 'Show & Tell Art 🎨';
+      this.dom.currentModeBadge.className = 'text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-200';
+
+      this.dom.phaseHudContainer.classList.add('hidden');
+      this.dom.yogaQuestHud.classList.add('hidden');
+      this.dom.potsQuestHud.classList.add('hidden');
+      if (this.dom.artQuestHud) this.dom.artQuestHud.classList.remove('hidden');
+
+      this.dom.poseModeView.classList.add('hidden');
+      this.dom.potsModeView.classList.add('hidden');
+      if (this.dom.artModeView) this.dom.artModeView.classList.remove('hidden');
+
+      this.hideAllOverlays();
+      this.dom.potsGameOverlay.classList.add('hidden');
+      if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.remove('hidden');
+
+      this.dom.simulateBtn.innerHTML = '<span>📸</span> Capture Snapshot';
+      this.dom.gameLoopIcon.textContent = '🎨';
+      this.dom.gameLoopText.textContent = 'Art Studio';
+
+      soundEngine.pausePotsBgMusic();
+      this.startShowAndTellArtMode();
     }
   }
 
@@ -967,7 +1092,7 @@ class FreezeDanceGame {
   /**
    * Check if a grabbed letter has been brought into the active drop slot (Age 6-8)
    */
-  checkGrabbedLetterDropProximity(letterEl, letter, handViewportX, handViewportY) {
+  checkGrabbedLetterDropProximity(letterEl, letter) {
     if (this.potsLocked || !this.dom.potsDropZone) return false;
 
     const activeSlot = document.getElementById(`drop-slot-${this.nextDropSlotIndex}`);
@@ -976,23 +1101,12 @@ class FreezeDanceGame {
     const slotRect = activeSlot.getBoundingClientRect();
     const letterRect = letterEl.getBoundingClientRect();
 
-    // Intersection & proximity test between letter and drop slot
-    const letterCenterX = letterRect.left + letterRect.width / 2;
-    const letterCenterY = letterRect.top + letterRect.height / 2;
-    const slotCenterX = slotRect.left + slotRect.width / 2;
-    const slotCenterY = slotRect.top + slotRect.height / 2;
-    const distLetter = Math.hypot(letterCenterX - slotCenterX, letterCenterY - slotCenterY);
+    // Intersection test
+    const dx = (letterRect.left + letterRect.width / 2) - (slotRect.left + slotRect.width / 2);
+    const dy = (letterRect.top + letterRect.height / 2) - (slotRect.top + slotRect.height / 2);
+    const dist = Math.hypot(dx, dy);
 
-    const isHandOverSlot = (
-      handViewportX !== undefined &&
-      handViewportY !== undefined &&
-      handViewportX >= slotRect.left - 25 &&
-      handViewportX <= slotRect.right + 25 &&
-      handViewportY >= slotRect.top - 25 &&
-      handViewportY <= slotRect.bottom + 25
-    );
-
-    if (distLetter < 70 || isHandOverSlot) {
+    if (dist < 65) {
       const currentItem = this.currentPotWords[this.potWordIndex];
       const expectedLetter = currentItem.word[this.nextDropSlotIndex];
 
@@ -1164,140 +1278,80 @@ class FreezeDanceGame {
 
   /**
    * Collision and Hand Coordinate Tracking for Activity 2
-   * - Strict Viewport Bounding Box: eliminates ghost collisions by ensuring hand falls strictly inside potRect.
-   * - Unified Hand Indexing: primary active hand (whichever is visible, prioritizing right hand, or multiHandLandmarks[0])
-   *   handles BOTH breaking pots and grabbing/dragging letters.
    */
-  checkPotsCollision(landmarks, results) {
-    if (this.potsLocked || !this.dom.cameraContainer) return;
+  checkPotsCollision(landmarks) {
+    if (this.potsLocked || !landmarks || !this.dom.cameraContainer) return;
 
     const containerRect = this.dom.cameraContainer.getBoundingClientRect();
     if (!containerRect.width || !containerRect.height) return;
 
-    // Collect all candidate hand points and identify the primary active hand
+    // Track wrists (15, 16) and index fingertips (19, 20)
     const handPoints = [];
-    let primaryHand = null;
 
-    // 1. Check results.multiHandLandmarks if available
-    if (results && Array.isArray(results.multiHandLandmarks) && results.multiHandLandmarks.length > 0) {
-      for (let hIdx = 0; hIdx < results.multiHandLandmarks.length; hIdx++) {
-        const hand = results.multiHandLandmarks[hIdx];
-        if (hand && hand.length > 0) {
-          // Tip of index finger (landmark 8) or wrist (landmark 0)
-          const tip = hand[8] || hand[0];
-          const wrist = hand[0];
-          if (tip) handPoints.push({ x: tip.x, y: tip.y });
-          if (wrist && wrist !== tip) handPoints.push({ x: wrist.x, y: wrist.y });
-          if (hIdx === 0 && tip) {
-            primaryHand = { x: tip.x, y: tip.y, isRight: true };
-          }
-        }
-      }
+    // Left hand
+    const lw = landmarks[LANDMARKS.LEFT_WRIST];
+    const li = landmarks[LANDMARKS.LEFT_INDEX];
+    if (lw && lw.visibility > 0.35) handPoints.push({ x: lw.x, y: lw.y, isLeft: true });
+    if (li && li.visibility > 0.35) handPoints.push({ x: li.x, y: li.y, isLeft: true });
+
+    // Right hand
+    const rw = landmarks[LANDMARKS.RIGHT_WRIST];
+    const ri = landmarks[LANDMARKS.RIGHT_INDEX];
+    if (rw && rw.visibility > 0.35) handPoints.push({ x: rw.x, y: rw.y, isLeft: false });
+    if (ri && ri.visibility > 0.35) handPoints.push({ x: ri.x, y: ri.y, isLeft: false });
+
+    // Update hand visual trackers
+    let leftScreenPoint = null;
+    let rightScreenPoint = null;
+
+    if (lw && lw.visibility > 0.35) {
+      leftScreenPoint = { x: (1.0 - lw.x) * 100, y: lw.y * 100 };
+    }
+    if (rw && rw.visibility > 0.35) {
+      rightScreenPoint = { x: (1.0 - rw.x) * 100, y: rw.y * 100 };
     }
 
-    // 2. Pose landmarks (wrists: 15, 16; index fingers: 19, 20)
-    let rw = null, ri = null, lw = null, li = null;
-    let rightPoint = null;
-    let leftPoint = null;
-
-    if (landmarks && landmarks.length > 0) {
-      rw = landmarks[LANDMARKS.RIGHT_WRIST];
-      ri = landmarks[LANDMARKS.RIGHT_INDEX];
-      lw = landmarks[LANDMARKS.LEFT_WRIST];
-      li = landmarks[LANDMARKS.LEFT_INDEX];
-
-      const isRightActive = (rw && (rw.visibility || 1) > 0.35) || (ri && (ri.visibility || 1) > 0.35);
-      const isLeftActive = (lw && (lw.visibility || 1) > 0.35) || (li && (li.visibility || 1) > 0.35);
-
-      if (isRightActive) {
-        // Prefer index fingertip for precision if visible, else wrist
-        const pt = (ri && (ri.visibility || 1) > 0.35) ? ri : rw;
-        rightPoint = { x: pt.x, y: pt.y, isRight: true };
-        handPoints.push({ x: pt.x, y: pt.y, isRight: true });
-        if (rw && pt !== rw && (rw.visibility || 1) > 0.35) {
-          handPoints.push({ x: rw.x, y: rw.y, isRight: true });
-        }
-      }
-
-      if (isLeftActive) {
-        const pt = (li && (li.visibility || 1) > 0.35) ? li : lw;
-        leftPoint = { x: pt.x, y: pt.y, isRight: false };
-        handPoints.push({ x: pt.x, y: pt.y, isRight: false });
-        if (lw && pt !== lw && (lw.visibility || 1) > 0.35) {
-          handPoints.push({ x: lw.x, y: lw.y, isRight: false });
-        }
-      }
-
-      // Designate the primary active hand:
-      // Allow primary active hand (whichever hand is visible, prioritizing right hand, or multiHandLandmarks[0])
-      // to handle BOTH breaking pots and dragging letters so the child can complete using just their right hand!
-      if (!primaryHand) {
-        if (rightPoint) {
-          primaryHand = rightPoint;
-        } else if (leftPoint) {
-          primaryHand = leftPoint;
-        }
-      }
-    }
-
-    if (handPoints.length === 0 && !primaryHand) return;
-
-    // Update screen hand trackers for visual feedback
     if (this.dom.leftHandTracker) {
-      if (leftPoint) {
+      if (leftScreenPoint) {
         this.dom.leftHandTracker.classList.remove('hidden');
-        this.dom.leftHandTracker.style.left = `${(1.0 - leftPoint.x) * 100}%`;
-        this.dom.leftHandTracker.style.top = `${leftPoint.y * 100}%`;
+        this.dom.leftHandTracker.style.left = `${leftScreenPoint.x}%`;
+        this.dom.leftHandTracker.style.top = `${leftScreenPoint.y}%`;
       } else {
         this.dom.leftHandTracker.classList.add('hidden');
       }
     }
 
     if (this.dom.rightHandTracker) {
-      if (rightPoint) {
+      if (rightScreenPoint) {
         this.dom.rightHandTracker.classList.remove('hidden');
-        this.dom.rightHandTracker.style.left = `${(1.0 - rightPoint.x) * 100}%`;
-        this.dom.rightHandTracker.style.top = `${rightPoint.y * 100}%`;
-      } else if (primaryHand && !leftPoint) {
-        this.dom.rightHandTracker.classList.remove('hidden');
-        this.dom.rightHandTracker.style.left = `${(1.0 - primaryHand.x) * 100}%`;
-        this.dom.rightHandTracker.style.top = `${primaryHand.y * 100}%`;
+        this.dom.rightHandTracker.style.left = `${rightScreenPoint.x}%`;
+        this.dom.rightHandTracker.style.top = `${rightScreenPoint.y}%`;
       } else {
         this.dom.rightHandTracker.classList.add('hidden');
       }
     }
 
-    // Convert normalized hand coordinates (x, y) to browser's viewport dimensions
-    // Note: Video feed is mirrored horizontally (scaleX(-1)), so mirrored x is (1.0 - pt.x)
-    const viewportHandCoords = handPoints.map(pt => ({
-      viewportX: containerRect.left + (1.0 - pt.x) * containerRect.width,
-      viewportY: containerRect.top + pt.y * containerRect.height,
-    }));
-
     const currentItem = this.currentPotWords[this.potWordIndex];
     const numLetters = currentItem.word.length;
 
-    // 1. Strict 2D Bounding-Box Pot Collision:
-    // A pot should ONLY break if the hand coordinates fall strictly inside its actual getBoundingClientRect() boundaries.
+    // 1. Check collision against unbroken pots
     for (let i = 0; i < numLetters; i++) {
       if (this.potsState[i]) continue; // already broken
 
       const potEl = document.getElementById(`pot-slot-${i}`);
       if (!potEl) continue;
 
-      const potGraphic = document.getElementById(`pot-graphic-${i}`);
-      const targetEl = (potGraphic && !potGraphic.classList.contains('hidden')) ? potGraphic : potEl;
-      const potRect = targetEl.getBoundingClientRect();
+      const potRect = potEl.getBoundingClientRect();
+      const potCenterX = potRect.left - containerRect.left + potRect.width / 2;
+      const potCenterY = potRect.top - containerRect.top + potRect.height / 2;
+      const hitRadius = Math.max(65, Math.min(potRect.width, potRect.height) * 0.7);
 
-      for (const { viewportX, viewportY } of viewportHandCoords) {
-        const isStrictlyInside = (
-          viewportX >= potRect.left &&
-          viewportX <= potRect.right &&
-          viewportY >= potRect.top &&
-          viewportY <= potRect.bottom
-        );
+      for (const pt of handPoints) {
+        const handPxX = (1.0 - pt.x) * containerRect.width;
+        const handPxY = pt.y * containerRect.height;
 
-        if (isStrictlyInside) {
+        const distance = Math.hypot(handPxX - potCenterX, handPxY - potCenterY);
+        if (distance < hitRadius) {
           this.hitPot(i);
           break;
         }
@@ -1305,33 +1359,25 @@ class FreezeDanceGame {
     }
 
     // 2. AGE 6-8: Hand Tracking Letter Grab & Drag
-    // Primary active hand handles BOTH breaking pots and dragging letters!
-    if (this.potsAgeGroup === AGE_GROUPS.AGE_6_8 && primaryHand) {
-      const primaryViewportX = containerRect.left + (1.0 - primaryHand.x) * containerRect.width;
-      const primaryViewportY = containerRect.top + primaryHand.y * containerRect.height;
+    if (this.potsAgeGroup === AGE_GROUPS.AGE_6_8 && handPoints.length > 0) {
+      // Pick the primary active hand (lowest Y / closest to interaction area)
+      const primaryHand = handPoints[0];
       const handPxX = (1.0 - primaryHand.x) * containerRect.width;
       const handPxY = primaryHand.y * containerRect.height;
 
       if (!this.grabbedLetter) {
         // Proximity detection to unplaced scattered letters
         for (const letterEl of this.scatteredLetters) {
-          const letterRect = letterEl.getBoundingClientRect();
-          const letterCenterX = letterRect.left + letterRect.width / 2;
-          const letterCenterY = letterRect.top + letterRect.height / 2;
-          const distToCenter = Math.hypot(primaryViewportX - letterCenterX, primaryViewportY - letterCenterY);
+          const letterLeft = parseFloat(letterEl.style.left) || 0;
+          const letterTop = parseFloat(letterEl.style.top) || 0;
+          const dist = Math.hypot(handPxX - (letterLeft + 29), handPxY - (letterTop + 29));
 
-          const isOverLetter = (
-            primaryViewportX >= letterRect.left - 15 &&
-            primaryViewportX <= letterRect.right + 15 &&
-            primaryViewportY >= letterRect.top - 15 &&
-            primaryViewportY <= letterRect.bottom + 15
-          ) || distToCenter < 55;
-
-          if (isOverLetter) {
+          if (dist < 50) {
+            // Grab letter!
             this.grabbedLetter = {
               element: letterEl,
               letter: letterEl.dataset.letter,
-              id: letterEl.dataset.letterId,
+              id: letterEl.dataset.letterId
             };
             letterEl.classList.add('is-grabbed');
             this.dom.feedbackText.textContent = `Grabbing '${letterEl.dataset.letter}'! Move your hand to the bottom drop slot!`;
@@ -1339,21 +1385,339 @@ class FreezeDanceGame {
           }
         }
       } else {
-        // Drag letter following primary active hand position
+        // Drag letter following hand position
         const letterEl = this.grabbedLetter.element;
         if (letterEl && letterEl.parentNode) {
-          const halfW = (letterEl.offsetWidth || 58) / 2;
-          const halfH = (letterEl.offsetHeight || 58) / 2;
-          letterEl.style.left = `${handPxX - halfW}px`;
-          letterEl.style.top = `${handPxY - halfH}px`;
+          letterEl.style.left = `${handPxX - 29}px`;
+          letterEl.style.top = `${handPxY - 29}px`;
 
           // Test proximity to active drop slot
-          this.checkGrabbedLetterDropProximity(letterEl, this.grabbedLetter.letter, primaryViewportX, primaryViewportY);
+          this.checkGrabbedLetterDropProximity(letterEl, this.grabbedLetter.letter);
         } else {
           this.grabbedLetter = null;
         }
       }
     }
+  }
+
+  /**
+   * ============================================================
+   * ACTIVITY 3: SHOW & TELL ART MODE
+   * ============================================================
+   */
+  startShowAndTellArtMode() {
+    soundEngine.init();
+    voiceEngine.initVoices();
+    soundEngine.playBgMusic();
+    this.isGameRunning = true;
+    this.currentPhase = PHASES.IDLE;
+    this.artPhase = 'OFFLINE';
+
+    if (this.artCountdownTimer) {
+      clearInterval(this.artCountdownTimer);
+      this.artCountdownTimer = null;
+    }
+
+    // Start camera in background so it's ready when child clicks Ready
+    if (!this.tracker.isRunning && !this.isSimulating) {
+      this.startCamera().catch(e => console.warn('Camera background init warning:', e));
+    }
+
+    this.dom.statusText.textContent = 'Show & Tell Art: Draw your masterpiece on paper, then click Ready!';
+    this.dom.feedbackText.textContent = 'Take your time and draw with paper and crayons! 🖍️';
+
+    this.loadArtPrompt(this.artPromptIndex);
+  }
+
+  loadArtPrompt(index) {
+    this.artPromptIndex = (index + ART_PROMPTS.length) % ART_PROMPTS.length;
+    const item = ART_PROMPTS[this.artPromptIndex];
+
+    // Left Card elements
+    if (this.dom.artPromptCountBadge) {
+      this.dom.artPromptCountBadge.textContent = `Prompt ${this.artPromptIndex + 1} of ${ART_PROMPTS.length}`;
+    }
+    if (this.dom.artPromptBadge) {
+      this.dom.artPromptBadge.textContent = `Prompt ${this.artPromptIndex + 1} of ${ART_PROMPTS.length}`;
+    }
+    if (this.dom.artPromptEmoji) {
+      this.dom.artPromptEmoji.textContent = item.emoji;
+    }
+    if (this.dom.artPromptTitle) {
+      this.dom.artPromptTitle.textContent = item.prompt;
+    }
+    if (this.dom.artPromptHint) {
+      this.dom.artPromptHint.textContent = item.hint;
+    }
+
+    // Right Card Offline Screen elements
+    if (this.dom.artOfflineEmoji) {
+      this.dom.artOfflineEmoji.textContent = item.emoji;
+    }
+    if (this.dom.artOfflinePrompt) {
+      this.dom.artOfflinePrompt.textContent = item.prompt;
+    }
+
+    // Show offline screen, hide others
+    this.artPhase = 'OFFLINE';
+    if (this.dom.artOfflineScreen) this.dom.artOfflineScreen.classList.remove('hidden');
+    if (this.dom.artSnapshotScreen) this.dom.artSnapshotScreen.classList.add('hidden');
+    if (this.dom.artShowcaseScreen) this.dom.artShowcaseScreen.classList.add('hidden');
+    if (this.dom.artCameraFlash) this.dom.artCameraFlash.classList.remove('animate-camera-flash');
+
+    this.dom.simulateBtn.innerHTML = '<span>📸</span> Capture Snapshot';
+
+    // Puppy Voice Prompt:
+    // "Arf! Go get your paper and crayons! Draw a happy tree, and click Ready when you are done!"
+    const promptPhrase = item.prompt.endsWith('!') ? item.prompt.slice(0, -1) : item.prompt;
+    const puppyPromptLine = `Arf! Go get your paper and crayons! ${promptPhrase}, and click Ready when you are done!`;
+    voiceEngine.speak(puppyPromptLine, { pitch: 1.6, rate: 1.1 });
+  }
+
+  nextArtPrompt() {
+    this.loadArtPrompt(this.artPromptIndex + 1);
+  }
+
+  prevArtPrompt() {
+    this.loadArtPrompt(this.artPromptIndex - 1);
+  }
+
+  startArtSnapshotPhase() {
+    if (this.artCountdownTimer) {
+      clearInterval(this.artCountdownTimer);
+      this.artCountdownTimer = null;
+    }
+
+    this.artPhase = 'SNAPSHOT';
+
+    // Ensure camera feed is active
+    if (!this.tracker.isRunning && !this.isSimulating) {
+      this.startCamera().catch(e => console.warn('Camera start error:', e));
+    }
+
+    // Reveal snapshot viewfinder screen
+    if (this.dom.artOfflineScreen) this.dom.artOfflineScreen.classList.add('hidden');
+    if (this.dom.artShowcaseScreen) this.dom.artShowcaseScreen.classList.add('hidden');
+    if (this.dom.artSnapshotScreen) this.dom.artSnapshotScreen.classList.remove('hidden');
+
+    this.dom.statusText.textContent = 'Hold your drawing up to the camera and hold still!';
+    this.dom.feedbackText.textContent = 'Hold still! Taking snapshot in 5 seconds...';
+
+    // Puppy voice: "Hold your drawing up to the camera and hold still!"
+    voiceEngine.speak("Hold your drawing up to the camera and hold still!", { pitch: 1.6, rate: 1.1 });
+
+    // 5-Second visual countdown
+    this.artCountdownSeconds = 5;
+    if (this.dom.artCountdownNumber) this.dom.artCountdownNumber.textContent = '5';
+    if (this.dom.artCountdownBar) this.dom.artCountdownBar.style.width = '100%';
+    soundEngine.playCountdownTick(5);
+
+    const startTime = performance.now();
+    const duration = 5000;
+
+    this.artCountdownTimer = setInterval(() => {
+      const elapsed = performance.now() - startTime;
+      const remainingSec = Math.max(0, Math.ceil((duration - elapsed) / 1000));
+      const progressPercent = Math.max(0, ((duration - elapsed) / duration) * 100);
+
+      if (this.dom.artCountdownBar) {
+        this.dom.artCountdownBar.style.width = `${progressPercent}%`;
+      }
+
+      if (remainingSec !== this.artCountdownSeconds && remainingSec > 0) {
+        this.artCountdownSeconds = remainingSec;
+        if (this.dom.artCountdownNumber) {
+          this.dom.artCountdownNumber.textContent = `${remainingSec}`;
+          this.dom.artCountdownNumber.classList.remove('animate-pop');
+          void this.dom.artCountdownNumber.offsetWidth; // trigger reflow
+          this.dom.artCountdownNumber.classList.add('animate-pop');
+        }
+        soundEngine.playCountdownTick(remainingSec);
+      }
+
+      if (elapsed >= duration) {
+        clearInterval(this.artCountdownTimer);
+        this.artCountdownTimer = null;
+        this.captureArtSnapshot();
+      }
+    }, 100);
+  }
+
+  captureArtSnapshot() {
+    if (this.artCountdownTimer) {
+      clearInterval(this.artCountdownTimer);
+      this.artCountdownTimer = null;
+    }
+
+    // Play satisfying mechanical camera shutter click
+    soundEngine.playCameraShutter();
+
+    // Trigger white camera flash animation
+    if (this.dom.artCameraFlash) {
+      this.dom.artCameraFlash.classList.remove('animate-camera-flash');
+      void this.dom.artCameraFlash.offsetWidth; // reflow
+      this.dom.artCameraFlash.classList.add('animate-camera-flash');
+    }
+
+    const video = this.dom.webcamVideo;
+    const canvas = document.createElement('canvas');
+    const w = (video && video.videoWidth > 0) ? video.videoWidth : 640;
+    const h = (video && video.videoHeight > 0) ? video.videoHeight : 480;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    const hasLiveVideo = video && video.readyState >= 2 && video.videoWidth > 0;
+
+    if (hasLiveVideo) {
+      // Horizontal flip so mirrored view matches polaroid photo 1:1
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, w, h);
+    } else {
+      // Fallback artwork generator if camera feed is unavailable or simulating
+      this.drawArtMockupOnCanvas(ctx, w, h);
+    }
+
+    this.artCapturedDataUrl = canvas.toDataURL('image/png');
+    this.showArtShowcase();
+  }
+
+  drawArtMockupOnCanvas(ctx, w, h) {
+    // Fill pastel paper canvas
+    ctx.fillStyle = '#fefdfa';
+    ctx.fillRect(0, 0, w, h);
+
+    // Subtle border
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(5, 5, w - 10, h - 10);
+
+    // Soft sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.7);
+    skyGrad.addColorStop(0, '#e0f2fe');
+    skyGrad.addColorStop(1, '#f0fdf4');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(10, 10, w - 20, h * 0.7);
+
+    // Rolling green hill
+    ctx.beginPath();
+    ctx.moveTo(10, h * 0.75);
+    ctx.quadraticCurveTo(w * 0.5, h * 0.56, w - 10, h * 0.72);
+    ctx.lineTo(w - 10, h - 10);
+    ctx.lineTo(10, h - 10);
+    ctx.closePath();
+    ctx.fillStyle = '#86efac';
+    ctx.fill();
+
+    // Smiling Sun
+    ctx.beginPath();
+    ctx.arc(w * 0.82, h * 0.25, Math.min(w, h) * 0.12, 0, Math.PI * 2);
+    ctx.fillStyle = '#fde047';
+    ctx.fill();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Sun rays
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+      const rx1 = w * 0.82 + Math.cos(angle) * (Math.min(w, h) * 0.14);
+      const ry1 = h * 0.25 + Math.sin(angle) * (Math.min(w, h) * 0.14);
+      const rx2 = w * 0.82 + Math.cos(angle) * (Math.min(w, h) * 0.19);
+      const ry2 = h * 0.25 + Math.sin(angle) * (Math.min(w, h) * 0.19);
+      ctx.beginPath();
+      ctx.moveTo(rx1, ry1);
+      ctx.lineTo(rx2, ry2);
+      ctx.stroke();
+    }
+
+    // Happy Tree Trunk
+    const trunkW = w * 0.08;
+    const trunkH = h * 0.35;
+    ctx.fillStyle = '#b45309';
+    ctx.fillRect(w * 0.38 - trunkW / 2, h * 0.55, trunkW, trunkH);
+
+    // Big green foliage canopy
+    ctx.beginPath();
+    ctx.arc(w * 0.38, h * 0.42, Math.min(w, h) * 0.24, 0, Math.PI * 2);
+    ctx.fillStyle = '#22c55e';
+    ctx.fill();
+    ctx.strokeStyle = '#15803d';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // Smiling face on tree
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.arc(w * 0.33, h * 0.40, 5, 0, Math.PI * 2);
+    ctx.arc(w * 0.43, h * 0.40, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(w * 0.38, h * 0.42, 16, 0.2, Math.PI - 0.2, false);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#1e293b';
+    ctx.stroke();
+
+    // Rosy cheeks
+    ctx.fillStyle = 'rgba(244, 63, 94, 0.4)';
+    ctx.beginPath();
+    ctx.arc(w * 0.30, h * 0.43, 8, 0, Math.PI * 2);
+    ctx.arc(w * 0.46, h * 0.43, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Drawing title text
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 20px Fredoka, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('My Happy Drawing! 🌟', w / 2, h - 25);
+  }
+
+  showArtShowcase() {
+    this.artPhase = 'SHOWCASE';
+
+    // Hide snapshot and offline screens, reveal showcase
+    if (this.dom.artSnapshotScreen) this.dom.artSnapshotScreen.classList.add('hidden');
+    if (this.dom.artOfflineScreen) this.dom.artOfflineScreen.classList.add('hidden');
+    if (this.dom.artShowcaseScreen) this.dom.artShowcaseScreen.classList.remove('hidden');
+
+    const promptItem = ART_PROMPTS[this.artPromptIndex];
+    if (this.dom.artSnapshotImg && this.artCapturedDataUrl) {
+      this.dom.artSnapshotImg.src = this.artCapturedDataUrl;
+    }
+    if (this.dom.artPolaroidTitle) {
+      this.dom.artPolaroidTitle.textContent = `${promptItem.emoji} ${promptItem.title}!`;
+    }
+    if (this.dom.artPolaroidDate) {
+      const now = new Date();
+      this.dom.artPolaroidDate.textContent = `Frolic Forest • ${now.toLocaleDateString()}`;
+    }
+
+    // Award 20 Energy Coins!
+    this.awardCoins(20);
+
+    // Audio & Visual celebratory effects
+    soundEngine.playVictoryChime();
+    this.launchConfetti();
+
+    // Puppy Voice Cheer: "Wow! Paw-some drawing! I love it!"
+    voiceEngine.speak("Wow! Paw-some drawing! I love it!", { pitch: 1.6, rate: 1.1 });
+
+    this.dom.statusText.textContent = '🌟 Paw-some drawing! +20 Energy Coins awarded!';
+    this.dom.feedbackText.textContent = 'Drawing preserved in the polaroid frame!';
+    this.dom.simulateBtn.innerHTML = '<span>🎨</span> Next Art Prompt';
+  }
+
+  downloadArtSnapshot() {
+    if (!this.artCapturedDataUrl) return;
+    const a = document.createElement('a');
+    const promptItem = ART_PROMPTS[this.artPromptIndex];
+    a.href = this.artCapturedDataUrl;
+    a.download = `frolic-forest-${promptItem.id}-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    soundEngine.playSuccessBubble();
   }
 
   get currentPose() {
@@ -1419,6 +1783,8 @@ class FreezeDanceGame {
         this.startGameLoop();
       } else if (this.gameMode === GAME_MODES.SHOOT_THE_POTS) {
         this.startShootThePotsMode();
+      } else if (this.gameMode === GAME_MODES.SHOW_AND_TELL_ART) {
+        this.startShowAndTellArtMode();
       } else {
         this.startYogaMode();
       }
@@ -1452,11 +1818,13 @@ class FreezeDanceGame {
       this.dom.gameLoopText.textContent = 'Resume Dance';
     } else if (this.gameMode === GAME_MODES.SHOOT_THE_POTS) {
       this.dom.gameLoopText.textContent = 'Resume Pots';
+    } else if (this.gameMode === GAME_MODES.SHOW_AND_TELL_ART) {
+      this.dom.gameLoopText.textContent = 'Resume Studio';
     } else {
       this.dom.gameLoopText.textContent = 'Resume Yoga';
     }
     this.dom.statusText.textContent = 'Activity paused';
-    if (this.gameMode !== GAME_MODES.SHOOT_THE_POTS) {
+    if (this.gameMode !== GAME_MODES.SHOOT_THE_POTS && this.gameMode !== GAME_MODES.SHOW_AND_TELL_ART) {
       this.hideAllOverlays();
     }
   }
@@ -1687,9 +2055,13 @@ class FreezeDanceGame {
   /**
    * MediaPipe Pose landmark reception
    */
-  onPoseLandmarks(landmarks, results) {
+  onPoseLandmarks(landmarks) {
     if (this.gameMode === GAME_MODES.SHOOT_THE_POTS) {
-      this.checkPotsCollision(landmarks, results);
+      this.checkPotsCollision(landmarks);
+      return;
+    }
+
+    if (this.gameMode === GAME_MODES.SHOW_AND_TELL_ART) {
       return;
     }
 
@@ -1697,15 +2069,6 @@ class FreezeDanceGame {
       if (!landmarks && this.currentPhase === PHASES.FREEZE) {
         this.dom.feedbackText.textContent = 'Step into view so the mirror can verify your pose!';
         this.tracker.setMatchingState(false);
-        // Form broken (out of camera view): immediately reset hold timer
-        if (this.currentHoldTime > 0) {
-          this.currentHoldTime = 0.0;
-          this.lastSecondTicked = 0;
-          this.dom.holdProgressBar.style.width = '0%';
-          const circumference = 2 * Math.PI * 40;
-          this.dom.holdProgressRing.style.strokeDashoffset = circumference;
-          this.dom.holdCountdownText.textContent = `${Math.ceil(this.holdDurationRequired)}`;
-        }
       }
       return;
     }
@@ -1767,14 +2130,13 @@ class FreezeDanceGame {
         this.dom.feedbackText.textContent = evaluation.feedback;
         this.dom.feedbackBanner.className = 'px-4 py-2 rounded-2xl bg-white/90 border border-stone-200 text-slate-800 text-sm font-semibold transition-all duration-300 shadow-md text-center max-w-md';
 
-        // Form broken: immediately reset hold timer to 0
         if (this.currentHoldTime > 0) {
-          this.currentHoldTime = 0.0;
-          this.lastSecondTicked = 0;
-          this.dom.holdProgressBar.style.width = '0%';
+          this.currentHoldTime = Math.max(0, this.currentHoldTime - dt * 2.5);
+          const progressPercent = (this.currentHoldTime / this.holdDurationRequired) * 100;
+          this.dom.holdProgressBar.style.width = `${progressPercent}%`;
           const circumference = 2 * Math.PI * 40;
-          this.dom.holdProgressRing.style.strokeDashoffset = circumference;
-          this.dom.holdCountdownText.textContent = `${Math.ceil(this.holdDurationRequired)}`;
+          const strokeDashoffset = circumference - (circumference * progressPercent) / 100;
+          this.dom.holdProgressRing.style.strokeDashoffset = strokeDashoffset;
         }
       }
     }
@@ -1991,6 +2353,17 @@ class FreezeDanceGame {
 
       // Advance to next word
       this.nextPotWord();
+      return;
+    }
+
+    if (this.gameMode === GAME_MODES.SHOW_AND_TELL_ART) {
+      if (this.artPhase === 'OFFLINE') {
+        this.startArtSnapshotPhase();
+      } else if (this.artPhase === 'SNAPSHOT') {
+        this.captureArtSnapshot();
+      } else {
+        this.nextArtPrompt();
+      }
       return;
     }
 
@@ -2220,12 +2593,10 @@ class FreezeDanceGame {
     } else if (poseId === 'fruit_banana') {
       lm[11] = { x: 0.44, y: 0.42, z: 0, visibility: 0.99 };
       lm[12] = { x: 0.60, y: 0.40, z: 0, visibility: 0.99 };
-      lm[13] = { x: 0.40, y: 0.22, z: 0, visibility: 0.99 };
+      lm[13] = { x: 0.42, y: 0.22, z: 0, visibility: 0.99 };
       lm[14] = { x: 0.54, y: 0.20, z: 0, visibility: 0.99 };
-      lm[15] = { x: 0.36, y: 0.06, z: 0, visibility: 0.99 };
-      lm[16] = { x: 0.48, y: 0.05, z: 0, visibility: 0.99 };
-      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
-      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
+      lm[15] = { x: 0.28, y: 0.12, z: 0, visibility: 0.99 };
+      lm[16] = { x: 0.34, y: 0.12, z: 0, visibility: 0.99 };
     } else if (poseId === 'fruit_starfruit') {
       lm[11] = { x: 0.42, y: 0.38, z: 0, visibility: 0.99 };
       lm[12] = { x: 0.58, y: 0.38, z: 0, visibility: 0.99 };
@@ -2233,10 +2604,6 @@ class FreezeDanceGame {
       lm[14] = { x: 0.74, y: 0.24, z: 0, visibility: 0.99 };
       lm[15] = { x: 0.10, y: 0.10, z: 0, visibility: 0.99 };
       lm[16] = { x: 0.90, y: 0.10, z: 0, visibility: 0.99 };
-      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
-      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
-      lm[25] = { x: 0.34, y: 0.80, z: 0, visibility: 0.99 };
-      lm[26] = { x: 0.66, y: 0.80, z: 0, visibility: 0.99 };
       lm[27] = { x: 0.22, y: 0.96, z: 0, visibility: 0.99 };
       lm[28] = { x: 0.78, y: 0.96, z: 0, visibility: 0.99 };
     } else if (poseId === 'fruit_apple') {
@@ -2249,10 +2616,6 @@ class FreezeDanceGame {
       lm[16] = { x: 0.20, y: 0.68, z: 0, visibility: 0.99 };
       lm[23] = { x: 0.68, y: 0.62, z: 0, visibility: 0.99 };
       lm[24] = { x: 0.72, y: 0.58, z: 0, visibility: 0.99 };
-      lm[25] = { x: 0.56, y: 0.78, z: 0, visibility: 0.99 };
-      lm[26] = { x: 0.60, y: 0.74, z: 0, visibility: 0.99 };
-      lm[27] = { x: 0.74, y: 0.80, z: 0, visibility: 0.99 };
-      lm[28] = { x: 0.78, y: 0.76, z: 0, visibility: 0.99 };
     } else if (poseId === 'fruit_watermelon') {
       lm[0] = { x: 0.50, y: 0.32, z: 0, visibility: 0.99 };
       lm[11] = { x: 0.42, y: 0.46, z: 0, visibility: 0.99 };
@@ -2268,51 +2631,30 @@ class FreezeDanceGame {
       lm[27] = { x: 0.12, y: 0.84, z: 0, visibility: 0.99 };
       lm[28] = { x: 0.88, y: 0.84, z: 0, visibility: 0.99 };
     } else if (poseId === 'veg_carrot') {
-      lm[0] = { x: 0.50, y: 0.28, z: 0, visibility: 0.99 };
-      lm[11] = { x: 0.42, y: 0.42, z: 0, visibility: 0.99 };
-      lm[12] = { x: 0.58, y: 0.42, z: 0, visibility: 0.99 };
-      lm[13] = { x: 0.44, y: 0.22, z: 0, visibility: 0.99 };
-      lm[14] = { x: 0.56, y: 0.22, z: 0, visibility: 0.99 };
-      lm[15] = { x: 0.48, y: 0.06, z: 0, visibility: 0.99 };
-      lm[16] = { x: 0.52, y: 0.06, z: 0, visibility: 0.99 };
-      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
-      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
+      lm[13] = { x: 0.42, y: 0.20, z: 0, visibility: 0.99 };
+      lm[14] = { x: 0.58, y: 0.20, z: 0, visibility: 0.99 };
+      lm[15] = { x: 0.49, y: 0.08, z: 0, visibility: 0.99 };
+      lm[16] = { x: 0.51, y: 0.08, z: 0, visibility: 0.99 };
     } else if (poseId === 'veg_broccoli') {
-      lm[11] = { x: 0.42, y: 0.40, z: 0, visibility: 0.99 };
-      lm[12] = { x: 0.58, y: 0.40, z: 0, visibility: 0.99 };
-      lm[13] = { x: 0.24, y: 0.40, z: 0, visibility: 0.99 };
-      lm[14] = { x: 0.76, y: 0.40, z: 0, visibility: 0.99 };
+      lm[13] = { x: 0.24, y: 0.42, z: 0, visibility: 0.99 };
+      lm[14] = { x: 0.76, y: 0.42, z: 0, visibility: 0.99 };
       lm[15] = { x: 0.24, y: 0.16, z: 0, visibility: 0.99 };
       lm[16] = { x: 0.76, y: 0.16, z: 0, visibility: 0.99 };
-      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
-      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
     } else if (poseId === 'veg_corn') {
-      lm[11] = { x: 0.42, y: 0.40, z: 0, visibility: 0.99 };
-      lm[12] = { x: 0.58, y: 0.40, z: 0, visibility: 0.99 };
-      lm[13] = { x: 0.38, y: 0.20, z: 0, visibility: 0.99 };
+      lm[13] = { x: 0.30, y: 0.22, z: 0, visibility: 0.99 };
       lm[14] = { x: 0.68, y: 0.52, z: 0, visibility: 0.99 };
-      lm[15] = { x: 0.36, y: 0.05, z: 0, visibility: 0.99 };
-      lm[16] = { x: 0.56, y: 0.64, z: 0, visibility: 0.99 };
-      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
-      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
+      lm[15] = { x: 0.26, y: 0.08, z: 0, visibility: 0.99 };
+      lm[16] = { x: 0.56, y: 0.66, z: 0, visibility: 0.99 };
     } else if (poseId === 'veg_pea') {
-      lm[11] = { x: 0.42, y: 0.38, z: 0, visibility: 0.99 };
-      lm[12] = { x: 0.58, y: 0.38, z: 0, visibility: 0.99 };
       lm[13] = { x: 0.34, y: 0.48, z: 0, visibility: 0.99 };
       lm[14] = { x: 0.66, y: 0.48, z: 0, visibility: 0.99 };
-      lm[15] = { x: 0.48, y: 0.48, z: 0, visibility: 0.99 };
-      lm[16] = { x: 0.52, y: 0.48, z: 0, visibility: 0.99 };
-      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
-      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
+      lm[15] = { x: 0.48, y: 0.50, z: 0, visibility: 0.99 };
+      lm[16] = { x: 0.52, y: 0.50, z: 0, visibility: 0.99 };
     } else if (poseId === 'veg_pumpkin') {
-      lm[11] = { x: 0.42, y: 0.38, z: 0, visibility: 0.99 };
-      lm[12] = { x: 0.58, y: 0.38, z: 0, visibility: 0.99 };
       lm[13] = { x: 0.22, y: 0.46, z: 0, visibility: 0.99 };
       lm[14] = { x: 0.78, y: 0.46, z: 0, visibility: 0.99 };
       lm[15] = { x: 0.42, y: 0.48, z: 0, visibility: 0.99 };
       lm[16] = { x: 0.58, y: 0.48, z: 0, visibility: 0.99 };
-      lm[23] = { x: 0.44, y: 0.65, z: 0, visibility: 0.99 };
-      lm[24] = { x: 0.56, y: 0.65, z: 0, visibility: 0.99 };
     } else {
       lm[13] = { x: 0.36, y: 0.24, z: 0, visibility: 0.99 };
       lm[15] = { x: 0.32, y: 0.10, z: 0, visibility: 0.99 };
