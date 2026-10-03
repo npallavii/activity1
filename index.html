@@ -119,10 +119,10 @@
   <!-- SUB-MENU MODAL: ACTIVITY SELECTION (Freeze Dance, Fruit Yoga, Veg Yoga, Shoot the Pots) -->
   <!-- ============================================================ -->
   <div id="mode-selection-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-md transition-all duration-300 hidden">
-    <div class="bounce-in max-w-4xl w-full rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden bg-stone-50 border border-stone-200/90 shadow-2xl text-slate-700">
+    <div class="bounce-in max-w-5xl w-full rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden bg-stone-50 border border-stone-200/90 shadow-2xl text-slate-700">
       
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-slate-600 text-xs font-bold uppercase tracking-wider mb-2">
-        🌿 Forest Activity Menu
+        🌿 Forest Game Menu
       </div>
 
       <h2 class="text-3xl sm:text-4xl font-black font-game text-slate-800 mb-1">
@@ -132,8 +132,8 @@
         Pick a fun active game to play with camera tracking!
       </p>
 
-      <!-- 5 Colorful Activity Buttons -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      <!-- 6 Colorful Activity Buttons -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5">
         
         <!-- 1. Freeze Dance Button -->
         <button id="btn-mode-freeze" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-emerald-50 hover:bg-emerald-100/90 border-2 border-emerald-200/90 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
@@ -143,7 +143,7 @@
           <h3 class="text-lg sm:text-xl font-black font-game text-emerald-950 mb-1">Freeze Dance</h3>
           <p class="text-[11px] sm:text-xs text-slate-600 font-medium mb-3 leading-snug">Jump! Jump! Jump! ➔ 3, 2, 1 ➔ FREEZE!</p>
           <span class="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
-            3s Freeze Hold
+            Freeze & Pose
           </span>
         </button>
 
@@ -155,7 +155,7 @@
           <h3 class="text-lg sm:text-xl font-black font-game text-rose-950 mb-1">Fruit Yoga</h3>
           <p class="text-[11px] sm:text-xs text-slate-600 font-medium mb-3 leading-snug">See pictures, hear fruit names & pose!</p>
           <span class="px-2.5 py-1 rounded-full bg-rose-500 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
-            5s Fruit Hold
+            Fruit Yoga
           </span>
         </button>
 
@@ -167,31 +167,43 @@
           <h3 class="text-lg sm:text-xl font-black font-game text-amber-950 mb-1">Vegetable Yoga</h3>
           <p class="text-[11px] sm:text-xs text-slate-600 font-medium mb-3 leading-snug">Learn veggies, hear names & balance strong!</p>
           <span class="px-2.5 py-1 rounded-full bg-amber-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
-            5s Veggie Hold
+            Veggie Yoga
           </span>
         </button>
 
-        <!-- 4. Shoot the Pots Button (Activity 2) -->
+        <!-- 4. Shoot the Pots Button -->
         <button id="btn-mode-pots" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-orange-50 hover:bg-orange-100/90 border-2 border-orange-200/90 hover:border-orange-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
           <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-orange-100 text-orange-800 border border-orange-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
             🏺
           </div>
-          <h3 class="text-lg sm:text-xl font-black font-game text-orange-950 mb-1">Shoot Pots</h3>
+          <h3 class="text-lg sm:text-xl font-black font-game text-orange-950 mb-1">Shoot the Pots</h3>
           <p class="text-[11px] sm:text-xs text-slate-600 font-medium mb-3 leading-snug">Swipe hands to smash pots & spell words!</p>
           <span class="px-2.5 py-1 rounded-full bg-orange-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
-            Hit Pots & Spell
+            Shoot the Pots
           </span>
         </button>
 
-        <!-- 5. Show & Tell Art Button (Activity 3) -->
-        <button id="btn-mode-art" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-indigo-50 hover:bg-indigo-100/90 border-2 border-indigo-200/90 hover:border-indigo-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
-          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
+        <!-- 5. Show & Tell Art Button -->
+        <button id="btn-mode-art" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-blue-50 hover:bg-blue-100/90 border-2 border-blue-200/90 hover:border-blue-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-100 text-blue-800 border border-blue-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
             🎨
           </div>
-          <h3 class="text-lg sm:text-xl font-black font-game text-indigo-950 mb-1">Show & Tell</h3>
-          <p class="text-[11px] sm:text-xs text-slate-600 font-medium mb-3 leading-snug">Draw offline, hold it up & snap a photo!</p>
+          <h3 class="text-lg sm:text-xl font-black font-game text-blue-950 mb-1">Show & Tell</h3>
+          <p class="text-[11px] sm:text-xs text-slate-600 font-medium mb-3 leading-snug">Draw with crayons & show the blue mascot!</p>
+          <span class="px-2.5 py-1 rounded-full bg-blue-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
+            Start Art Studio
+          </span>
+        </button>
+
+        <!-- 6. Gesture Builder Button (Activity 6) -->
+        <button id="btn-mode-builder" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-indigo-50 hover:bg-indigo-100/90 border-2 border-indigo-200/90 hover:border-indigo-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
+            🏠
+          </div>
+          <h3 class="text-lg sm:text-xl font-black font-game text-indigo-950 mb-1">Gesture Builder</h3>
+          <p class="text-[11px] sm:text-xs text-slate-600 font-medium mb-3 leading-snug">Reach & air-grab shapes to build a dream house!</p>
           <span class="px-2.5 py-1 rounded-full bg-indigo-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
-            Snapshot & Coins
+            Play Gesture Builder
           </span>
         </button>
 
@@ -200,13 +212,13 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- AGE SELECTION MODAL (Activity 2: Shoot the Pots)            -->
+  <!-- AGE SELECTION MODAL (Shoot the Pots)                         -->
   <!-- ============================================================ -->
   <div id="age-selection-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-md transition-all duration-300 hidden">
     <div class="bounce-in max-w-xl w-full rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden bg-stone-50 border border-stone-200/90 shadow-2xl text-slate-700">
       
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-900 text-xs font-bold uppercase tracking-wider mb-3">
-        🏺 Activity 2: Shoot the Pots
+        🏺 Shoot the Pots
       </div>
 
       <h2 class="text-2xl sm:text-3xl font-black font-game text-slate-800 mb-2">
@@ -380,15 +392,36 @@
 
   <!-- SHOW & TELL ART QUEST HUD (Shown in Show & Tell Art mode) -->
   <div id="art-quest-hud" class="hidden relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 pt-3">
-    <div class="flex items-center justify-between p-3 rounded-2xl bg-white/80 border border-indigo-200 shadow-sm backdrop-blur-md">
+    <div class="flex items-center justify-between p-3 rounded-2xl bg-white/85 border border-blue-200 shadow-sm backdrop-blur-md">
       <div class="flex items-center gap-3">
         <span class="text-3xl animate-bounce">🎨</span>
         <div>
-          <div class="text-sm font-black font-game text-indigo-950 flex items-center gap-2">
+          <div class="text-sm font-black font-game text-blue-950 flex items-center gap-2">
             <span>Show & Tell Art Studio</span>
-            <span id="art-prompt-badge" class="px-2 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-[11px] text-indigo-800">Prompt 1 of 8</span>
+            <span id="art-prompt-badge" class="px-2.5 py-0.5 rounded-full bg-blue-100 border border-blue-200 text-[11px] text-blue-800 font-extrabold">🐘 Cute Elephant</span>
           </div>
-          <p id="art-hud-subtitle" class="text-xs text-slate-600 font-medium">Draw your masterpiece on paper, then snap a photo with the puppy!</p>
+          <p id="art-hud-subtitle" class="text-xs text-slate-600 font-medium">Draw your cute elephant using crayons, then show it to the blue mascot!</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-black uppercase tracking-wider">
+          🪙 +20 Coins Reward
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- GESTURE BUILDER QUEST HUD (Shown in Gesture Builder mode) -->
+  <div id="builder-quest-hud" class="hidden relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 pt-3">
+    <div class="flex items-center justify-between p-3 rounded-2xl bg-white/85 border border-indigo-200 shadow-sm backdrop-blur-md">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl animate-bounce">🏠</span>
+        <div>
+          <div class="text-sm font-black font-game text-indigo-950 flex items-center gap-2">
+            <span>Gesture Builder: Dream House</span>
+            <span id="builder-progress-badge" class="px-2.5 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-[11px] text-indigo-800 font-extrabold">0 of 3 Shapes Placed</span>
+          </div>
+          <p id="builder-hud-subtitle" class="text-xs text-slate-600 font-medium">Stretch your arms across the room, hover 0.5s to air-grab shapes, and snap them into the blueprint!</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -484,7 +517,7 @@
             <!-- Header of Pots Card -->
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs uppercase font-extrabold tracking-widest text-orange-800 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full">
-                Activity 2: Word Quest
+                Word Quest 🏺
               </span>
               <span id="pots-level-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-orange-100 text-orange-900 border border-orange-200">
                 Word 1 of 10
@@ -549,37 +582,44 @@
           </div>
         </div>
 
-        <!-- SHOW & TELL ART MODE VIEW (Activity 3 Left Card) -->
+        <!-- SHOW & TELL ART MODE VIEW (Activity 5 Left Card) -->
         <div id="art-mode-view" class="hidden flex flex-col justify-between h-full">
           <div>
             <!-- Header of Art Card -->
             <div class="flex items-center justify-between mb-2">
-              <span class="text-xs uppercase font-extrabold tracking-widest text-indigo-800 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
-                Drawing Studio
+              <span class="text-xs uppercase font-extrabold tracking-widest text-blue-800 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
+                Art Studio 🎨
               </span>
-              <span id="art-prompt-count-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200">
-                Prompt 1 of 8
+              <span id="art-prompt-count-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 text-blue-900 border border-blue-200">
+                🐘 Elephant Quest
               </span>
             </div>
 
             <!-- Title & Emoji -->
             <div class="flex items-center gap-3 mb-1">
-              <span id="art-prompt-emoji" class="text-3xl sm:text-4xl">🌳</span>
+              <span id="art-prompt-emoji" class="text-3xl sm:text-4xl">🐘</span>
               <h2 id="art-prompt-title" class="text-2xl sm:text-3xl font-black font-game text-slate-800">
-                Draw a happy tree!
+                Cute Elephant Art
               </h2>
             </div>
 
             <!-- Drawing Instructions -->
             <p id="art-prompt-hint" class="text-xs sm:text-sm text-slate-600 font-medium mb-3 leading-snug">
-              Use paper and crayons! Draw a big green tree with a happy face, fruits, or flowers.
+              Use paper and crayons! Draw a sweet, friendly elephant with big ears and a happy trunk.
             </p>
 
-            <!-- Creative Steps Card -->
-            <div class="p-4 rounded-3xl bg-stone-50 border border-stone-200 shadow-inner my-2">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] uppercase font-extrabold tracking-wider text-indigo-900">Creative Steps</span>
-                <span class="text-xs font-bold text-indigo-700">Paper + Crayons</span>
+            <!-- Blue Mascot & Speech Bubble Card -->
+            <div class="p-4 rounded-3xl bg-blue-50/70 border border-blue-200 shadow-inner my-2">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-2xl bg-blue-100 border border-blue-200 flex items-center justify-center text-2xl flex-shrink-0 animate-bounce">
+                  🤖
+                </div>
+                <div class="flex-1 text-left">
+                  <span class="text-[10px] uppercase font-bold text-blue-700 block">Art Buddy Beep</span>
+                  <p id="art-mascot-speech-left" class="text-xs sm:text-sm font-black font-game text-slate-800 leading-snug">
+                    "Can you draw a cute elephant using crayons?"
+                  </p>
+                </div>
               </div>
 
               <!-- 3 Steps -->
@@ -587,7 +627,7 @@
                 <div class="p-2 sm:p-2.5 rounded-2xl bg-white border border-stone-200">
                   <div class="text-2xl mb-0.5">🖍️</div>
                   <div class="text-[11px] font-bold text-slate-700">1. Draw</div>
-                  <div class="text-[10px] text-slate-500">On paper</div>
+                  <div class="text-[10px] text-slate-500">Elephant</div>
                 </div>
                 <div class="p-2 sm:p-2.5 rounded-2xl bg-white border border-stone-200">
                   <div class="text-2xl mb-0.5">✋</div>
@@ -597,34 +637,97 @@
                 <div class="p-2 sm:p-2.5 rounded-2xl bg-white border border-stone-200">
                   <div class="text-2xl mb-0.5">📸</div>
                   <div class="text-[11px] font-bold text-slate-700">3. Snapshot</div>
-                  <div class="text-[10px] text-emerald-600 font-bold">+20 Coins</div>
-                </div>
-              </div>
-
-              <!-- Puppy Guide Bubble -->
-              <div class="mt-3 p-2.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 flex items-center gap-3">
-                <span class="text-3xl">🐶</span>
-                <div class="text-left">
-                  <span class="text-[10px] uppercase font-bold text-indigo-700 block">Puppy Guide</span>
-                  <span id="art-puppy-bubble" class="text-xs font-semibold text-slate-700">Take your time and have fun drawing! Click "I'm Ready!" when done!</span>
+                  <div class="text-[10px] text-blue-600 font-bold">+20 Coins</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Bottom Controls for Art Mode -->
+          <!-- Bottom Button: "I am ready with my drawing!" -->
           <div class="mt-3 pt-3 border-t border-stone-200">
-            <div class="flex items-center justify-between gap-2">
-              <button id="btn-art-prev-prompt" class="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs border border-stone-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-1 cursor-pointer">
-                <span>←</span> Prev
-              </button>
-              <button id="btn-art-ready-left" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black font-game text-xs transition-all hover:scale-105 active:scale-95 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
-                <span>✨</span> I'm Ready to Show!
-              </button>
-              <button id="btn-art-next-prompt" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-sm flex items-center gap-1 cursor-pointer">
-                Next <span>→</span>
-              </button>
+            <button id="btn-art-ready-left" class="w-full py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black font-game text-sm transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2 cursor-pointer">
+              <span>✨</span> I am ready with my drawing!
+            </button>
+          </div>
+        </div>
+
+        <!-- GESTURE BUILDER MODE VIEW (Activity 6 Left Card) -->
+        <div id="builder-mode-view" class="hidden flex flex-col justify-between h-full">
+          <div>
+            <!-- Header of Builder Card -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs uppercase font-extrabold tracking-widest text-indigo-800 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
+                Gesture Builder 🏠
+              </span>
+              <span id="builder-shapes-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200">
+                0 / 3 Snapped
+              </span>
             </div>
+
+            <!-- Title & Emoji -->
+            <div class="flex items-center gap-3 mb-1">
+              <span class="text-3xl sm:text-4xl">🏗️</span>
+              <h2 class="text-2xl sm:text-3xl font-black font-game text-slate-800">
+                Dream House
+              </h2>
+            </div>
+
+            <!-- Instructions -->
+            <p class="text-xs sm:text-sm text-slate-600 font-medium mb-3 leading-snug">
+              Stretch wide! Air-grab each shape by hovering your hand for 0.5s, then drag across the room to its blueprint slot.
+            </p>
+
+            <!-- 3 Shapes Checklist -->
+            <div class="space-y-2.5 my-3">
+              <!-- Roof -->
+              <div id="checklist-roof" class="flex items-center justify-between p-2.5 rounded-2xl bg-stone-50 border border-stone-200 transition-all">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center text-lg">🔺</div>
+                  <div class="text-left">
+                    <span class="text-xs font-black font-game text-slate-800 block">Triangle Roof</span>
+                    <span class="text-[10px] text-slate-500">Soft Red Triangle</span>
+                  </div>
+                </div>
+                <span id="badge-roof-status" class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-stone-200 text-slate-600">Waiting</span>
+              </div>
+
+              <!-- Body -->
+              <div id="checklist-body" class="flex items-center justify-between p-2.5 rounded-2xl bg-stone-50 border border-stone-200 transition-all">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-lg">🟦</div>
+                  <div class="text-left">
+                    <span class="text-xs font-black font-game text-slate-800 block">Square Body</span>
+                    <span class="text-[10px] text-slate-500">Soft Blue Square</span>
+                  </div>
+                </div>
+                <span id="badge-body-status" class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-stone-200 text-slate-600">Waiting</span>
+              </div>
+
+              <!-- Door -->
+              <div id="checklist-door" class="flex items-center justify-between p-2.5 rounded-2xl bg-stone-50 border border-stone-200 transition-all">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-lg">🚪</div>
+                  <div class="text-left">
+                    <span class="text-xs font-black font-game text-slate-800 block">Rectangle Door</span>
+                    <span class="text-[10px] text-slate-500">Soft Yellow Rectangle</span>
+                  </div>
+                </div>
+                <span id="badge-door-status" class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-stone-200 text-slate-600">Waiting</span>
+              </div>
+            </div>
+
+            <!-- Pro Tip -->
+            <div class="p-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 flex items-center gap-2.5">
+              <span class="text-xl">💡</span>
+              <span><strong>Pro Tip:</strong> Stand back so your camera can see you stretch both hands all the way to the edges!</span>
+            </div>
+          </div>
+
+          <!-- Bottom Button -->
+          <div class="mt-3 pt-3 border-t border-stone-200">
+            <button id="btn-builder-reset" class="w-full py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs border border-stone-200 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+              <span>🔄</span> Restart House Blueprint
+            </button>
           </div>
         </div>
       </section>
@@ -821,68 +924,138 @@
           </div>
 
           <!-- ============================================== -->
-          <!-- ACTIVITY 3: SHOW & TELL ART INTERACTIVE STAGE  -->
+          <!-- ACTIVITY 5: SHOW & TELL ART INTERACTIVE STAGE  -->
           <!-- ============================================== -->
           <div id="art-game-overlay" class="absolute inset-0 hidden pointer-events-auto z-30 select-none overflow-hidden">
             
-            <!-- 1. Offline Phase Screen: Drawing Prompt & Big Soft-Edged "I'm Ready!" Button -->
-            <div id="art-offline-screen" class="absolute inset-0 flex flex-col items-center justify-center p-6 bg-stone-50/95 backdrop-blur-md z-30 text-center transition-all duration-300">
-              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-900 text-xs font-bold uppercase tracking-wider mb-3">
-                🖍️ Offline Drawing Time
-              </div>
-
-              <!-- Big Drawing Prompt Emoji & Title -->
-              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-indigo-100/80 border-2 border-indigo-200 flex items-center justify-center text-4xl sm:text-5xl mb-3 shadow-inner">
-                <span id="art-offline-emoji" class="animate-bounce">🌳</span>
-              </div>
-
-              <h3 id="art-offline-prompt" class="text-2xl sm:text-3xl font-black font-game text-slate-800 mb-2">
-                Draw a happy tree!
-              </h3>
-
-              <p class="text-xs sm:text-sm text-slate-600 max-w-md mb-6 font-medium leading-relaxed">
-                Grab your paper and crayons! When your colorful drawing is finished, click the button below to hold it up to the camera!
-              </p>
-
-              <!-- Large Soft-Edged "I'm Ready!" Button -->
-              <button id="btn-art-ready" class="py-3.5 sm:py-4 px-8 sm:px-10 rounded-3xl bg-emerald-600 hover:bg-emerald-700 text-white font-black font-game text-xl sm:text-2xl shadow-lg hover:scale-105 active:scale-95 transition-all border-2 border-emerald-300/40 cursor-pointer flex items-center gap-3">
-                <span>✨</span> I'm Ready!
-              </button>
+            <!-- PHASE 1 (The Offline Teacher): Soft pastel bg-blue-50, Blue Mascot, Speech Bubble & "I am ready with my drawing!" button -->
+            <div id="art-offline-screen" class="absolute inset-0 flex flex-col items-center justify-center p-5 sm:p-6 bg-blue-50/95 backdrop-blur-md z-30 text-center transition-all duration-300 overflow-y-auto">
               
-              <div class="mt-4 flex items-center gap-3">
-                <button id="btn-art-shuffle-prompt" class="px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-slate-700 text-xs font-bold border border-stone-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer">
-                  <span>🔄</span> Different Drawing Prompt
-                </button>
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-900 text-xs font-black uppercase tracking-wider mb-2">
+                🤖 Art Studio Classroom
+              </div>
+
+              <!-- Blue Mascot Character + Speech Bubble row -->
+              <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-xl w-full my-2">
+                
+                <!-- The Blue Mascot Character (Cute Robot/Alien) -->
+                <div class="flex-shrink-0 relative group">
+                  <div class="absolute inset-0 rounded-full bg-blue-400/20 blur-xl animate-pulse"></div>
+                  <svg class="w-24 h-24 sm:w-28 sm:h-28 drop-shadow-md transition-transform duration-300 hover:scale-105" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="mascotBodyGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#93c5fd" />
+                        <stop offset="50%" stop-color="#60a5fa" />
+                        <stop offset="100%" stop-color="#3b82f6" />
+                      </linearGradient>
+                      <linearGradient id="mascotBellyGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#dbeafe" />
+                        <stop offset="100%" stop-color="#bfdbfe" />
+                      </linearGradient>
+                    </defs>
+                    <!-- Antenna -->
+                    <line x1="60" y1="26" x2="60" y2="12" stroke="#60a5fa" stroke-width="4" stroke-linecap="round" />
+                    <circle cx="60" cy="10" r="7" fill="#fde047" stroke="#f59e0b" stroke-width="1.5" />
+                    <!-- Ears/horns -->
+                    <rect x="22" y="44" width="8" height="18" rx="4" fill="#3b82f6" />
+                    <rect x="90" y="44" width="8" height="18" rx="4" fill="#3b82f6" />
+                    <!-- Head & Body -->
+                    <rect x="28" y="26" width="64" height="68" rx="30" fill="url(#mascotBodyGrad1)" stroke="#2563eb" stroke-width="3" />
+                    <!-- Belly screen -->
+                    <rect x="42" y="60" width="36" height="28" rx="14" fill="url(#mascotBellyGrad1)" stroke="#93c5fd" stroke-width="1.5" />
+                    <!-- Eyes -->
+                    <circle cx="48" cy="46" r="7" fill="#1e293b" />
+                    <circle cx="46" cy="44" r="2.5" fill="#ffffff" />
+                    <circle cx="50" cy="48" r="1.2" fill="#ffffff" />
+                    <circle cx="72" cy="46" r="7" fill="#1e293b" />
+                    <circle cx="70" cy="44" r="2.5" fill="#ffffff" />
+                    <circle cx="74" cy="48" r="1.2" fill="#ffffff" />
+                    <!-- Cheeks -->
+                    <ellipse cx="40" cy="54" rx="4.5" ry="3" fill="#f472b6" opacity="0.65" />
+                    <ellipse cx="80" cy="54" rx="4.5" ry="3" fill="#f472b6" opacity="0.65" />
+                    <!-- Smile -->
+                    <path d="M 52 54 Q 60 62 68 54" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round" fill="none" />
+                    <!-- Hands -->
+                    <circle cx="26" cy="66" r="6" fill="#60a5fa" stroke="#2563eb" stroke-width="2" />
+                    <circle cx="94" cy="66" r="6" fill="#60a5fa" stroke="#2563eb" stroke-width="2" />
+                    <!-- Feet -->
+                    <ellipse cx="48" cy="94" rx="7" ry="4" fill="#2563eb" />
+                    <ellipse cx="72" cy="94" rx="7" ry="4" fill="#2563eb" />
+                  </svg>
+                </div>
+
+                <!-- Tailwind Speech Bubble next to Blue Mascot -->
+                <div class="relative bg-white border-2 border-blue-200 rounded-3xl p-4 sm:p-5 shadow-md text-left flex-1 max-w-md">
+                  <div class="hidden sm:block absolute -left-3 top-1/2 -translate-y-1/2 w-0 h-0 border-t-8 border-t-transparent border-r-[12px] border-r-blue-200 border-b-8 border-b-transparent"></div>
+                  <div class="hidden sm:block absolute -left-2 top-1/2 -translate-y-1/2 w-0 h-0 border-t-7 border-t-transparent border-r-[10px] border-r-white border-b-7 border-b-transparent"></div>
+                  
+                  <div class="flex items-center gap-1.5 mb-1">
+                    <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-blue-700">Art Buddy Beep</span>
+                  </div>
+                  <p id="art-mascot-speech-1" class="text-base sm:text-xl font-black font-game text-slate-800 leading-snug">
+                    Can you draw a cute elephant using crayons?
+                  </p>
+                </div>
+              </div>
+
+              <!-- Drawing Subject Preview -->
+              <div class="my-2 px-5 py-2 rounded-2xl bg-white/90 border border-blue-200 shadow-sm flex items-center gap-3">
+                <span class="text-4xl animate-bounce">🐘</span>
+                <div class="text-left">
+                  <span class="text-[10px] uppercase font-bold text-blue-600 block">Drawing Mission</span>
+                  <span class="text-sm font-black font-game text-slate-800">Cute Elephant (Paper + Crayons)</span>
+                </div>
+              </div>
+
+              <!-- Soft-edged Button: "I am ready with my drawing!" -->
+              <button id="btn-art-ready" class="py-3.5 sm:py-4 px-8 sm:px-10 rounded-3xl bg-blue-600 hover:bg-blue-700 text-white font-black font-game text-lg sm:text-xl shadow-lg hover:scale-105 active:scale-95 transition-all border-2 border-blue-300/40 cursor-pointer flex items-center gap-2.5 my-1">
+                <span>✨</span> I am ready with my drawing!
+              </button>
+
+              <div class="mt-2 text-xs text-slate-500 font-medium">
+                Take your time! When your crayon drawing is finished, click above to show the camera!
               </div>
             </div>
 
-            <!-- 2. Snapshot Phase Screen: Polaroid Viewfinder + 5-Second Countdown + Shutter Flash -->
-            <div id="art-snapshot-screen" class="absolute inset-0 flex flex-col items-center justify-between p-4 bg-slate-950/25 backdrop-blur-[1px] z-30 hidden pointer-events-none transition-all duration-300">
-              <!-- Top polaroid guidance pill -->
-              <div class="px-4 py-1.5 rounded-full bg-white/95 border border-indigo-200 shadow-md text-indigo-950 text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-2 animate-pulse pointer-events-auto">
-                <span>📸</span> Hold your drawing up to the camera and hold still!
+            <!-- PHASE 2 (The Camera Magic): Thick Soft Polaroid Frame around Webcam + Mascot Guidance + 5s Countdown -->
+            <div id="art-snapshot-screen" class="absolute inset-0 flex flex-col items-center justify-between p-3 sm:p-4 bg-slate-950/25 backdrop-blur-[1px] z-30 hidden pointer-events-none transition-all duration-300">
+              
+              <!-- Top Mascot & Speech Bubble: "Hold your drawing up to the camera!" -->
+              <div class="flex items-center gap-3 px-4 py-2 rounded-3xl bg-white/95 border-2 border-blue-200 shadow-lg pointer-events-auto max-w-lg w-full animate-bounce">
+                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 text-xl border border-blue-300">
+                  🤖
+                </div>
+                <div class="text-left flex-1">
+                  <div class="text-[10px] uppercase font-bold text-blue-700">Art Buddy Beep</div>
+                  <p id="art-mascot-speech-2" class="text-xs sm:text-sm font-black font-game text-slate-800 leading-tight">
+                    Hold your drawing up to the camera!
+                  </p>
+                </div>
               </div>
 
-              <!-- Center Polaroid Viewfinder Guide Box -->
-              <div class="relative w-full max-w-[280px] sm:max-w-[340px] aspect-[4/3] rounded-2xl border-4 border-dashed border-white/90 shadow-2xl flex flex-col items-center justify-center p-3 my-auto">
-                <div class="text-[11px] font-bold text-white uppercase tracking-widest drop-shadow bg-slate-900/60 px-3 py-1 rounded-full mb-2">
-                  Frame Your Art Inside Here
+              <!-- Thick Soft-Colored Polaroid Viewfinder Frame -->
+              <div class="relative w-full max-w-[290px] sm:max-w-[360px] aspect-[4/3] rounded-3xl border-8 sm:border-[10px] border-amber-100/95 shadow-2xl bg-white/10 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 my-auto">
+                <div class="polaroid-tape"></div>
+
+                <div class="text-[11px] font-bold text-white uppercase tracking-widest drop-shadow bg-slate-900/60 px-3 py-1 rounded-full mb-1">
+                  Frame Your Drawing Inside
                 </div>
 
-                <!-- Giant 5-Second Countdown Digits (5, 4, 3, 2, 1) -->
-                <div id="art-countdown-number" class="text-7xl sm:text-8xl font-black font-game text-amber-300 drop-shadow-[0_0_25px_rgba(245,158,11,0.9)] animate-pop">
+                <!-- Giant 5-Second Countdown Display (5, 4, 3, 2, 1) -->
+                <div id="art-countdown-number" class="text-7xl sm:text-8xl font-black font-game text-amber-300 drop-shadow-[0_0_25px_rgba(245,158,11,0.9)] animate-pop my-1">
                   5
                 </div>
                 
-                <div class="text-[11px] font-bold text-white/90 drop-shadow mt-1">
-                  Taking snapshot in seconds...
+                <div class="text-xs font-bold text-white drop-shadow">
+                  Hold still! Snapping photo in seconds...
                 </div>
               </div>
 
-              <!-- Bottom progress line -->
-              <div class="w-full max-w-sm mb-2 pointer-events-auto">
+              <!-- Bottom Countdown Bar -->
+              <div class="w-full max-w-sm mb-1 pointer-events-auto">
                 <div class="w-full h-2.5 rounded-full bg-slate-900/70 border border-white/40 overflow-hidden p-0.5">
-                  <div id="art-countdown-bar" class="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-100" style="width: 100%;"></div>
+                  <div id="art-countdown-bar" class="h-full rounded-full bg-gradient-to-r from-blue-400 via-amber-300 to-emerald-400 transition-all duration-100" style="width: 100%;"></div>
                 </div>
               </div>
 
@@ -890,15 +1063,15 @@
               <div id="art-camera-flash" class="absolute inset-0 bg-white pointer-events-none opacity-0 z-40"></div>
             </div>
 
-            <!-- 3. Win Condition Showcase: Captured Polaroid Photo in CSS Frame + Puppy Cheer + +20 Coins -->
+            <!-- PHASE 3 (The Capture): Captured Still in Polaroid Frame + Mascot Cheer + 20 Coins + Back to Menu -->
             <div id="art-showcase-screen" class="absolute inset-0 flex flex-col items-center justify-center p-4 bg-stone-900/50 backdrop-blur-md z-30 hidden overflow-y-auto">
               <div class="bounce-in flex flex-col items-center max-w-md w-full my-auto text-center">
                 
-                <!-- Polaroid CSS Frame -->
-                <div class="polaroid-frame mb-3 max-w-[280px] sm:max-w-[320px] w-full bg-white shadow-2xl rounded-2xl border border-stone-200">
+                <!-- Thick Soft Polaroid Frame with Captured Still Frame -->
+                <div class="polaroid-frame mb-3 max-w-[280px] sm:max-w-[320px] w-full bg-white shadow-2xl rounded-2xl border-4 border-amber-100/90">
                   <div class="polaroid-tape"></div>
                   
-                  <!-- Snapshot Image (Captured from webcam feed via Canvas API) -->
+                  <!-- Snapshot Image (Captured from webcam feed via Canvas 2D API) -->
                   <div class="w-full aspect-[4/3] rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative mb-3">
                     <img id="art-snapshot-img" class="w-full h-full object-cover" alt="Captured Drawing" />
                   </div>
@@ -906,42 +1079,176 @@
                   <!-- Polaroid Caption -->
                   <div class="flex items-center justify-between px-1">
                     <div class="text-left">
-                      <div id="art-polaroid-title" class="font-game font-bold text-slate-800 text-sm sm:text-base leading-tight">Happy Tree!</div>
-                      <div id="art-polaroid-date" class="text-[10px] text-slate-500 font-medium">Frolic Forest Art Studio</div>
+                      <div id="art-polaroid-title" class="font-game font-bold text-slate-800 text-sm sm:text-base leading-tight">🐘 Cute Elephant!</div>
+                      <div id="art-polaroid-date" class="text-[10px] text-slate-500 font-medium">Show & Tell Art Studio</div>
                     </div>
                     <span class="text-2xl">🌟</span>
                   </div>
                 </div>
 
-                <!-- Win Banner with Puppy Cheer & 20 Coins -->
-                <div class="p-3 sm:p-4 rounded-2xl bg-white/95 border border-amber-200 shadow-xl w-full">
-                  <div class="flex items-center justify-center gap-2 mb-1">
-                    <span class="text-2xl animate-bounce">🐶</span>
-                    <span class="text-lg sm:text-xl font-black font-game text-slate-800">
-                      "Paw-some drawing! I love it!"
-                    </span>
+                <!-- Mascot Cheer Card with Synchronized Speech Bubble & 20 Coins -->
+                <div class="p-3 sm:p-4 rounded-3xl bg-white/95 border-2 border-blue-200 shadow-xl w-full">
+                  
+                  <div class="flex items-center gap-3 text-left mb-2">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-100 border border-blue-200 flex items-center justify-center text-2xl flex-shrink-0 animate-bounce">
+                      🤖
+                    </div>
+                    <div class="flex-1">
+                      <span class="text-[10px] uppercase font-bold text-blue-700 block">Art Buddy Beep</span>
+                      <p id="art-mascot-speech-3" class="text-sm sm:text-base font-black font-game text-slate-800 leading-tight">
+                        Wow! Your art is saved! Beautiful work!
+                      </p>
+                    </div>
                   </div>
 
-                  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 my-1 shadow-sm">
+                  <!-- 20 Energy Coins Awarded Badge -->
+                  <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50 border border-amber-200 my-1 shadow-sm">
                     <span class="text-xl animate-spin" style="animation-duration: 3s;">🪙</span>
                     <span class="text-sm font-black font-game text-amber-900">+20 Energy Coins Earned!</span>
                   </div>
 
-                  <!-- Action Buttons: Save/Download, Retake, and Back to Menu -->
+                  <!-- Action Buttons: Save, Retake, and Back to Menu -->
                   <div class="grid grid-cols-2 gap-2 mt-3">
                     <button id="btn-art-retake" class="py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs border border-stone-200 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1">
                       <span>📷</span> Retake Photo
                     </button>
-                    <button id="btn-art-download" class="py-2.5 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-xs border border-indigo-200 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1">
+                    <button id="btn-art-download" class="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-xs border border-blue-200 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1">
                       <span>💾</span> Save Drawing
                     </button>
                   </div>
 
+                  <!-- Required Back to Menu Button -->
                   <button id="btn-art-back-menu" class="w-full mt-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black font-game text-sm shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2">
                     <span>🌿</span> Back to Menu
                   </button>
                 </div>
 
+              </div>
+            </div>
+
+            <!-- Hidden Canvas for drawImage(video, 0, 0) still capture -->
+            <canvas id="art-capture-canvas" class="hidden"></canvas>
+          </div>
+
+          <!-- ============================================== -->
+          <!-- ACTIVITY 6: GESTURE BUILDER OVERLAY           -->
+          <!-- ============================================== -->
+          <div id="builder-game-overlay" class="absolute inset-0 hidden pointer-events-auto z-30 select-none overflow-hidden bg-indigo-50/75 backdrop-blur-[0.5px]">
+            
+            <!-- Top Guidance Banner -->
+            <div class="absolute top-2.5 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white/95 border border-indigo-200 shadow-md flex items-center gap-2 text-xs font-black font-game text-indigo-900 z-20 pointer-events-none">
+              <span class="text-base animate-pulse">✋</span>
+              <span>Stretch wide & hover hand for 0.5s to air-grab shapes!</span>
+            </div>
+
+            <!-- Soft Glowing Hand Cursor with 0.5s Grab Ring -->
+            <div id="builder-hand-cursor" class="absolute w-12 h-12 -ml-6 -mt-6 rounded-full border-2 border-white pointer-events-none z-50 hidden transition-all duration-75 flex items-center justify-center shadow-[0_0_24px_rgba(99,102,241,0.9)] bg-indigo-500/40 backdrop-blur-sm">
+              <div class="w-3.5 h-3.5 rounded-full bg-white shadow-sm animate-ping opacity-80"></div>
+              <svg class="absolute inset-0 w-full h-full -rotate-90">
+                <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="4" />
+                <circle id="builder-grab-ring" cx="24" cy="24" r="20" fill="none" stroke="#facc15" stroke-width="4" stroke-dasharray="125.6" stroke-dashoffset="125.6" stroke-linecap="round" />
+              </svg>
+            </div>
+
+            <!-- Left & Right Scattered Solid Shapes (Gross Motor Spacing) -->
+            <!-- 1. Soft Red Triangle (Roof) on Far Left -->
+            <div id="shape-source-roof" class="builder-draggable absolute left-3 sm:left-6 top-[24%] -translate-y-1/2 flex flex-col items-center cursor-grab active:cursor-grabbing transition-transform hover:scale-105 z-30" data-shape="roof">
+              <div class="relative w-20 h-16 sm:w-24 sm:h-20 flex items-center justify-center filter drop-shadow-[0_4px_12px_rgba(239,68,68,0.4)] animate-pulse">
+                <svg viewBox="0 0 100 80" class="w-full h-full">
+                  <polygon points="50,6 94,74 6,74" fill="#f87171" stroke="#dc2626" stroke-width="3.5" stroke-linejoin="round" />
+                </svg>
+                <span class="absolute bottom-2 text-white font-game font-black text-[11px] drop-shadow">ROOF</span>
+              </div>
+              <span class="mt-1 text-[10px] font-extrabold text-slate-800 bg-white/90 px-2 py-0.5 rounded-full border border-red-200 shadow-sm">🔺 Red Triangle</span>
+            </div>
+
+            <!-- 2. Soft Yellow Rectangle (Door) on Far Left Bottom -->
+            <div id="shape-source-door" class="builder-draggable absolute left-3 sm:left-6 bottom-[16%] flex flex-col items-center cursor-grab active:cursor-grabbing transition-transform hover:scale-105 z-30" data-shape="door">
+              <div class="w-12 h-20 sm:w-14 sm:h-24 rounded-xl bg-amber-300 border-3 border-amber-500 shadow-[0_4px_12px_rgba(245,158,11,0.4)] flex flex-col items-center justify-between p-1.5 animate-pulse">
+                <div class="w-2.5 h-2.5 rounded-full bg-amber-700 self-end mr-1 mt-6"></div>
+                <span class="text-amber-950 font-game font-black text-[10px]">DOOR</span>
+              </div>
+              <span class="mt-1 text-[10px] font-extrabold text-slate-800 bg-white/90 px-2 py-0.5 rounded-full border border-amber-200 shadow-sm">🚪 Yellow Door</span>
+            </div>
+
+            <!-- 3. Soft Blue Square (Body) on Far Right -->
+            <div id="shape-source-body" class="builder-draggable absolute right-3 sm:right-6 top-[42%] -translate-y-1/2 flex flex-col items-center cursor-grab active:cursor-grabbing transition-transform hover:scale-105 z-30" data-shape="body">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-sky-300 border-3 border-sky-500 shadow-[0_4px_12px_rgba(14,165,233,0.4)] flex items-center justify-center p-2 text-center animate-pulse">
+                <span class="text-sky-950 font-game font-black text-xs leading-tight">HOUSE BODY</span>
+              </div>
+              <span class="mt-1 text-[10px] font-extrabold text-slate-800 bg-white/90 px-2 py-0.5 rounded-full border border-sky-200 shadow-sm">🟦 Blue Square</span>
+            </div>
+
+            <!-- CENTER BLUEPRINT: Dashed-line House (Triangle Roof, Square Body, Rectangle Door) -->
+            <div id="house-blueprint" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-10 pointer-events-none transition-all duration-500">
+              
+              <!-- Blueprint Roof Slot -->
+              <div id="slot-roof" class="relative w-44 h-24 sm:w-56 sm:h-32 flex items-center justify-center transition-all duration-300" data-slot="roof">
+                <svg viewBox="0 0 140 80" class="w-full h-full">
+                  <polygon points="70,6 134,74 6,74" fill="rgba(255,255,255,0.4)" stroke="#6366f1" stroke-width="3" stroke-dasharray="7,5" stroke-linejoin="round" />
+                </svg>
+                <!-- Snapped Roof Content -->
+                <div id="snapped-roof" class="absolute inset-0 flex items-center justify-center hidden bounce-in">
+                  <svg viewBox="0 0 140 80" class="w-full h-full drop-shadow-md">
+                    <polygon points="70,6 134,74 6,74" fill="#f87171" stroke="#dc2626" stroke-width="3.5" stroke-linejoin="round" />
+                  </svg>
+                </div>
+                <span id="slot-roof-label" class="absolute bottom-2 text-indigo-800 font-extrabold text-[10px] uppercase tracking-wider bg-white/90 px-2 py-0.5 rounded-full border border-indigo-200 shadow-sm">
+                  Roof Slot 🔺
+                </span>
+              </div>
+
+              <!-- Blueprint Body Slot -->
+              <div id="slot-body" class="relative w-40 h-40 sm:w-48 sm:h-48 -mt-1 rounded-2xl border-3 border-dashed border-indigo-500 bg-white/35 backdrop-blur-[1px] flex flex-col items-center justify-end p-2 transition-all duration-300" data-slot="body">
+                
+                <!-- Snapped Body Content -->
+                <div id="snapped-body" class="absolute inset-0 rounded-2xl bg-sky-300 border-3 border-sky-500 shadow-md hidden bounce-in"></div>
+
+                <!-- Blueprint Door Slot (inside Body Slot) -->
+                <div id="slot-door" class="relative z-10 w-14 h-24 sm:w-16 sm:h-28 rounded-t-xl border-3 border-dashed border-indigo-600 bg-white/45 backdrop-blur-[1px] flex items-center justify-center transition-all duration-300" data-slot="door">
+                  
+                  <!-- Snapped Door Content -->
+                  <div id="snapped-door" class="absolute inset-0 rounded-t-xl bg-amber-300 border-2 border-amber-500 flex flex-col items-center justify-between p-1.5 shadow hidden bounce-in">
+                    <div class="w-2 h-2 rounded-full bg-amber-700 self-end mr-1 mt-8"></div>
+                  </div>
+
+                  <span id="slot-door-label" class="text-indigo-900 font-black text-[9px] uppercase tracking-wider bg-white/90 px-1 rounded border border-indigo-200">
+                    Door 🚪
+                  </span>
+                </div>
+
+                <span id="slot-body-label" class="absolute top-2 text-indigo-800 font-extrabold text-[10px] uppercase tracking-wider bg-white/90 px-2 py-0.5 rounded-full border border-indigo-200 shadow-sm">
+                  Body Slot 🟦
+                </span>
+              </div>
+            </div>
+
+            <!-- Win Celebration Modal (House Glowing + 20 Coins + Back to Menu) -->
+            <div id="builder-win-card" class="absolute inset-0 flex flex-col items-center justify-center p-4 bg-stone-900/65 backdrop-blur-md z-40 hidden">
+              <div class="bounce-in max-w-sm sm:max-w-md w-full rounded-3xl bg-white p-6 sm:p-8 text-center border-4 border-amber-200 shadow-2xl">
+                <div class="text-6xl mb-2 animate-bounce">🏡✨</div>
+                <h3 class="text-2xl sm:text-3xl font-black font-game text-slate-800 mb-1">
+                  Beautiful House Built!
+                </h3>
+                <p id="builder-puppy-quote" class="text-xs sm:text-sm font-black font-game text-indigo-700 mb-3">
+                  "Paw-some building! You made a beautiful house!"
+                </p>
+
+                <!-- Coins Reward Badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 font-black font-game text-sm shadow-sm mb-4">
+                  <span class="text-2xl animate-spin" style="animation-duration: 3s;">🪙</span>
+                  <span>+20 Energy Coins Earned!</span>
+                </div>
+
+                <!-- Buttons: Build Again & Back to Menu -->
+                <div class="grid grid-cols-2 gap-3">
+                  <button id="btn-builder-replay" class="py-3 px-4 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-black font-game text-xs sm:text-sm border border-indigo-200 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                    🔄 Build Again
+                  </button>
+                  <button id="btn-builder-back-menu" class="py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black font-game text-xs sm:text-sm shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer">
+                    🌿 Back to Menu
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -18,7 +18,8 @@ export const GAME_MODES = {
   FRUIT_YOGA: 'FRUIT_YOGA',
   VEGETABLE_YOGA: 'VEGETABLE_YOGA',
   SHOOT_THE_POTS: 'SHOOT_THE_POTS',
-  SHOW_AND_TELL_ART: 'SHOW_AND_TELL_ART'
+  SHOW_AND_TELL_ART: 'SHOW_AND_TELL_ART',
+  GESTURE_BUILDER: 'GESTURE_BUILDER'
 };
 
 export const AGE_GROUPS = {
@@ -55,6 +56,7 @@ export const AGE_6_8_WORDS = [
 ];
 
 export const ART_PROMPTS = [
+  { id: 'cute_elephant', prompt: 'Can you draw a cute elephant using crayons?', title: 'Cute Elephant', emoji: '🐘', hint: 'Use paper and crayons! Draw a sweet, friendly elephant with big floppy ears and a happy curved trunk.' },
   { id: 'happy_tree', prompt: 'Draw a happy tree!', title: 'Happy Tree', emoji: '🌳', hint: 'Draw a big friendly tree with green leaves, branches and a smiling face!' },
   { id: 'smiling_sun', prompt: 'Draw a smiling sun!', title: 'Smiling Sun', emoji: '☀️', hint: 'Draw a bright warm sun in the sky with golden rays and a joyful smile!' },
   { id: 'cute_puppy', prompt: 'Draw a cute puppy!', title: 'Cute Puppy', emoji: '🐶', hint: 'Draw a playful puppy with floppy ears, a wagging tail and friendly eyes!' },
@@ -96,12 +98,19 @@ class FreezeDanceGame {
     this.nextDropSlotIndex = 0; // Current slot awaiting letter in spelling order
     this.scatteredLetters = []; // List of scattered letter DOM elements
     
-    // Activity 3: Show & Tell Art state
+    // Activity 5: Show & Tell Art state
     this.artPromptIndex = 0;
     this.artCapturedDataUrl = null;
     this.artCountdownTimer = null;
     this.artCountdownSeconds = 5;
     this.artPhase = 'OFFLINE'; // 'OFFLINE' | 'SNAPSHOT' | 'SHOWCASE'
+
+    // Activity 6: Gesture Builder state
+    this.builderSnappedShapes = { roof: false, body: false, door: false };
+    this.builderGrabbedShape = null; // 'roof' | 'body' | 'door' | null
+    this.builderHoverTarget = null;
+    this.builderHoverStartTime = 0;
+    this.builderCompleted = false;
     
     // Phase timers
     this.actionDuration = 5.0; // 5 seconds
@@ -298,6 +307,46 @@ class FreezeDanceGame {
       btnArtRetake: document.getElementById('btn-art-retake'),
       btnArtDownload: document.getElementById('btn-art-download'),
       btnArtBackMenu: document.getElementById('btn-art-back-menu'),
+
+      // Mascot Speech Bubbles & Still Capture Canvas
+      artMascotSpeech1: document.getElementById('art-mascot-speech-1'),
+      artMascotSpeech2: document.getElementById('art-mascot-speech-2'),
+      artMascotSpeech3: document.getElementById('art-mascot-speech-3'),
+      artMascotSpeechLeft: document.getElementById('art-mascot-speech-left'),
+      artCaptureCanvas: document.getElementById('art-capture-canvas'),
+
+      // Activity 6: Gesture Builder DOM Elements
+      btnModeBuilder: document.getElementById('btn-mode-builder'),
+      builderQuestHud: document.getElementById('builder-quest-hud'),
+      builderProgressBadge: document.getElementById('builder-progress-badge'),
+      builderHudSubtitle: document.getElementById('builder-hud-subtitle'),
+
+      builderModeView: document.getElementById('builder-mode-view'),
+      builderShapesBadge: document.getElementById('builder-shapes-badge'),
+      checklistRoof: document.getElementById('checklist-roof'),
+      checklistBody: document.getElementById('checklist-body'),
+      checklistDoor: document.getElementById('checklist-door'),
+      badgeRoofStatus: document.getElementById('badge-roof-status'),
+      badgeBodyStatus: document.getElementById('badge-body-status'),
+      badgeDoorStatus: document.getElementById('badge-door-status'),
+      btnBuilderReset: document.getElementById('btn-builder-reset'),
+
+      builderGameOverlay: document.getElementById('builder-game-overlay'),
+      builderHandCursor: document.getElementById('builder-hand-cursor'),
+      builderGrabRing: document.getElementById('builder-grab-ring'),
+      shapeSourceRoof: document.getElementById('shape-source-roof'),
+      shapeSourceBody: document.getElementById('shape-source-body'),
+      shapeSourceDoor: document.getElementById('shape-source-door'),
+      houseBlueprint: document.getElementById('house-blueprint'),
+      slotRoof: document.getElementById('slot-roof'),
+      slotBody: document.getElementById('slot-body'),
+      slotDoor: document.getElementById('slot-door'),
+      snappedRoof: document.getElementById('snapped-roof'),
+      snappedBody: document.getElementById('snapped-body'),
+      snappedDoor: document.getElementById('snapped-door'),
+      builderWinCard: document.getElementById('builder-win-card'),
+      btnBuilderReplay: document.getElementById('btn-builder-replay'),
+      btnBuilderBackMenu: document.getElementById('btn-builder-back-menu'),
     };
 
     this.init();
@@ -419,6 +468,21 @@ class FreezeDanceGame {
     if (this.dom.btnArtBackMenu) {
       this.dom.btnArtBackMenu.addEventListener('click', () => this.openModeSelectionModal());
     }
+
+    // Activity 6: Gesture Builder Event Listeners
+    if (this.dom.btnModeBuilder) {
+      this.dom.btnModeBuilder.addEventListener('click', () => this.selectMode(GAME_MODES.GESTURE_BUILDER));
+    }
+    if (this.dom.btnBuilderReset) {
+      this.dom.btnBuilderReset.addEventListener('click', () => this.resetGestureBuilder());
+    }
+    if (this.dom.btnBuilderReplay) {
+      this.dom.btnBuilderReplay.addEventListener('click', () => this.resetGestureBuilder());
+    }
+    if (this.dom.btnBuilderBackMenu) {
+      this.dom.btnBuilderBackMenu.addEventListener('click', () => this.openModeSelectionModal());
+    }
+    this.setupBuilderMouseTouchControls();
 
     // Celebration modal instant restart button
     this.dom.nextRoundBtn.addEventListener('click', () => {
@@ -546,10 +610,12 @@ class FreezeDanceGame {
       this.dom.poseModeView.classList.remove('hidden');
       this.dom.potsModeView.classList.add('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
+      if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
 
       // Right Card: Hide Pots & Art Overlay
       this.dom.potsGameOverlay.classList.add('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
+      if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>✨</span> Simulate Freeze Pose';
 
@@ -568,6 +634,7 @@ class FreezeDanceGame {
       this.dom.phaseHudContainer.classList.add('hidden');
       this.dom.potsQuestHud.classList.add('hidden');
       if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
+      if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.add('hidden');
       this.dom.yogaQuestHud.classList.remove('hidden');
       this.dom.yogaQuestIcon.textContent = '🍎';
       this.dom.yogaQuestTitle.textContent = 'Fruit Yoga Adventure';
@@ -577,8 +644,10 @@ class FreezeDanceGame {
       this.dom.poseModeView.classList.remove('hidden');
       this.dom.potsModeView.classList.add('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
+      if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
       this.dom.potsGameOverlay.classList.add('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
+      if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>✨</span> Simulate Freeze Pose';
 
@@ -597,6 +666,7 @@ class FreezeDanceGame {
       this.dom.phaseHudContainer.classList.add('hidden');
       this.dom.potsQuestHud.classList.add('hidden');
       if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
+      if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.add('hidden');
       this.dom.yogaQuestHud.classList.remove('hidden');
       this.dom.yogaQuestIcon.textContent = '🥕';
       this.dom.yogaQuestTitle.textContent = 'Vegetable Yoga Adventure';
@@ -606,8 +676,10 @@ class FreezeDanceGame {
       this.dom.poseModeView.classList.remove('hidden');
       this.dom.potsModeView.classList.add('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
+      if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
       this.dom.potsGameOverlay.classList.add('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
+      if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>✨</span> Simulate Freeze Pose';
 
@@ -623,15 +695,18 @@ class FreezeDanceGame {
       this.dom.phaseHudContainer.classList.add('hidden');
       this.dom.yogaQuestHud.classList.add('hidden');
       if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
+      if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.add('hidden');
       this.dom.potsQuestHud.classList.remove('hidden');
 
       this.dom.poseModeView.classList.add('hidden');
       this.dom.potsModeView.classList.remove('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
+      if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
 
       this.hideAllOverlays();
       this.dom.potsGameOverlay.classList.remove('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
+      if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>💥</span> Smash Next Pot';
       this.dom.gameLoopIcon.textContent = '⏸️';
@@ -650,10 +725,12 @@ class FreezeDanceGame {
       this.dom.poseModeView.classList.add('hidden');
       this.dom.potsModeView.classList.add('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.remove('hidden');
+      if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
 
       this.hideAllOverlays();
       this.dom.potsGameOverlay.classList.add('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.remove('hidden');
+      if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>📸</span> Capture Snapshot';
       this.dom.gameLoopIcon.textContent = '🎨';
@@ -661,6 +738,32 @@ class FreezeDanceGame {
 
       soundEngine.pausePotsBgMusic();
       this.startShowAndTellArtMode();
+    } else if (mode === GAME_MODES.GESTURE_BUILDER) {
+      this.dom.currentModeBadge.textContent = 'Gesture Builder 🏠';
+      this.dom.currentModeBadge.className = 'text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-200';
+
+      this.dom.phaseHudContainer.classList.add('hidden');
+      this.dom.yogaQuestHud.classList.add('hidden');
+      this.dom.potsQuestHud.classList.add('hidden');
+      if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
+      if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.remove('hidden');
+
+      this.dom.poseModeView.classList.add('hidden');
+      this.dom.potsModeView.classList.add('hidden');
+      if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
+      if (this.dom.builderModeView) this.dom.builderModeView.classList.remove('hidden');
+
+      this.hideAllOverlays();
+      this.dom.potsGameOverlay.classList.add('hidden');
+      if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
+      if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.remove('hidden');
+
+      this.dom.simulateBtn.innerHTML = '<span>✋</span> Air-Grab & Snap';
+      this.dom.gameLoopIcon.textContent = '🏠';
+      this.dom.gameLoopText.textContent = 'Gesture Builder';
+
+      soundEngine.pausePotsBgMusic();
+      this.startGestureBuilderMode();
     }
   }
 
@@ -1418,15 +1521,20 @@ class FreezeDanceGame {
       this.artCountdownTimer = null;
     }
 
-    // Start camera in background so it's ready when child clicks Ready
+    // Phase 1 (The Offline Teacher): Explicitly hide the live webcam feed & canvas
+    if (this.dom.webcamVideo) this.dom.webcamVideo.classList.add('hidden');
+    if (this.dom.overlayCanvas) this.dom.overlayCanvas.classList.add('hidden');
+    if (this.dom.cameraPlaceholder) this.dom.cameraPlaceholder.classList.add('hidden');
+
+    // Start camera tracking in background so it is ready when child clicks Ready
     if (!this.tracker.isRunning && !this.isSimulating) {
       this.startCamera().catch(e => console.warn('Camera background init warning:', e));
     }
 
-    this.dom.statusText.textContent = 'Show & Tell Art: Draw your masterpiece on paper, then click Ready!';
-    this.dom.feedbackText.textContent = 'Take your time and draw with paper and crayons! 🖍️';
+    this.dom.statusText.textContent = 'Show & Tell Art: Draw a cute elephant with crayons, then click Ready!';
+    this.dom.feedbackText.textContent = 'Take your time! Blue Mascot Beep is waiting for your drawing! 🖍️';
 
-    this.loadArtPrompt(this.artPromptIndex);
+    this.loadArtPrompt(0);
   }
 
   loadArtPrompt(index) {
@@ -1435,16 +1543,16 @@ class FreezeDanceGame {
 
     // Left Card elements
     if (this.dom.artPromptCountBadge) {
-      this.dom.artPromptCountBadge.textContent = `Prompt ${this.artPromptIndex + 1} of ${ART_PROMPTS.length}`;
+      this.dom.artPromptCountBadge.textContent = `${item.emoji} ${item.title}`;
     }
     if (this.dom.artPromptBadge) {
-      this.dom.artPromptBadge.textContent = `Prompt ${this.artPromptIndex + 1} of ${ART_PROMPTS.length}`;
+      this.dom.artPromptBadge.textContent = `${item.emoji} ${item.title}`;
     }
     if (this.dom.artPromptEmoji) {
       this.dom.artPromptEmoji.textContent = item.emoji;
     }
     if (this.dom.artPromptTitle) {
-      this.dom.artPromptTitle.textContent = item.prompt;
+      this.dom.artPromptTitle.textContent = item.title;
     }
     if (this.dom.artPromptHint) {
       this.dom.artPromptHint.textContent = item.hint;
@@ -1458,20 +1566,27 @@ class FreezeDanceGame {
       this.dom.artOfflinePrompt.textContent = item.prompt;
     }
 
-    // Show offline screen, hide others
+    // Phase 1: Show offline screen (bg-blue-50 with Blue Mascot), hide snapshot & showcase
     this.artPhase = 'OFFLINE';
     if (this.dom.artOfflineScreen) this.dom.artOfflineScreen.classList.remove('hidden');
     if (this.dom.artSnapshotScreen) this.dom.artSnapshotScreen.classList.add('hidden');
     if (this.dom.artShowcaseScreen) this.dom.artShowcaseScreen.classList.add('hidden');
     if (this.dom.artCameraFlash) this.dom.artCameraFlash.classList.remove('animate-camera-flash');
 
+    // Ensure webcam is hidden during Phase 1
+    if (this.dom.webcamVideo) this.dom.webcamVideo.classList.add('hidden');
+    if (this.dom.overlayCanvas) this.dom.overlayCanvas.classList.add('hidden');
+
     this.dom.simulateBtn.innerHTML = '<span>📸</span> Capture Snapshot';
 
-    // Puppy Voice Prompt:
-    // "Arf! Go get your paper and crayons! Draw a happy tree, and click Ready when you are done!"
-    const promptPhrase = item.prompt.endsWith('!') ? item.prompt.slice(0, -1) : item.prompt;
-    const puppyPromptLine = `Arf! Go get your paper and crayons! ${promptPhrase}, and click Ready when you are done!`;
-    voiceEngine.speak(puppyPromptLine, { pitch: 1.6, rate: 1.1 });
+    // Synchronize Mascot Speech Bubble & Web Speech API:
+    // Prompt line: "Can you draw a cute elephant using crayons?"
+    const line = item.prompt;
+    if (this.dom.artMascotSpeech1) this.dom.artMascotSpeech1.textContent = line;
+    if (this.dom.artMascotSpeechLeft) this.dom.artMascotSpeechLeft.textContent = line;
+
+    // Web Speech API with cute high-pitch, fast-rate voice
+    voiceEngine.speak(line, { pitch: 1.6, rate: 1.1 });
   }
 
   nextArtPrompt() {
@@ -1490,7 +1605,10 @@ class FreezeDanceGame {
 
     this.artPhase = 'SNAPSHOT';
 
-    // Ensure camera feed is active
+    // Phase 2 (The Camera Magic): Reveal the live webcam feed inside thick polaroid frame
+    if (this.dom.webcamVideo) this.dom.webcamVideo.classList.remove('hidden');
+    if (this.dom.cameraPlaceholder) this.dom.cameraPlaceholder.classList.add('hidden');
+
     if (!this.tracker.isRunning && !this.isSimulating) {
       this.startCamera().catch(e => console.warn('Camera start error:', e));
     }
@@ -1503,10 +1621,13 @@ class FreezeDanceGame {
     this.dom.statusText.textContent = 'Hold your drawing up to the camera and hold still!';
     this.dom.feedbackText.textContent = 'Hold still! Taking snapshot in 5 seconds...';
 
-    // Puppy voice: "Hold your drawing up to the camera and hold still!"
-    voiceEngine.speak("Hold your drawing up to the camera and hold still!", { pitch: 1.6, rate: 1.1 });
+    // Synchronize Mascot Speech Bubble & Web Speech API:
+    const phase2Line = "Hold your drawing up to the camera!";
+    if (this.dom.artMascotSpeech2) this.dom.artMascotSpeech2.textContent = phase2Line;
+    if (this.dom.artMascotSpeechLeft) this.dom.artMascotSpeechLeft.textContent = phase2Line;
+    voiceEngine.speak(phase2Line, { pitch: 1.6, rate: 1.1 });
 
-    // 5-Second visual countdown
+    // 5-Second visual countdown (5, 4, 3, 2, 1)
     this.artCountdownSeconds = 5;
     if (this.dom.artCountdownNumber) this.dom.artCountdownNumber.textContent = '5';
     if (this.dom.artCountdownBar) this.dom.artCountdownBar.style.width = '100%';
@@ -1549,7 +1670,7 @@ class FreezeDanceGame {
       this.artCountdownTimer = null;
     }
 
-    // Play satisfying mechanical camera shutter click
+    // Play camera shutter sound
     soundEngine.playCameraShutter();
 
     // Trigger white camera flash animation
@@ -1559,8 +1680,9 @@ class FreezeDanceGame {
       this.dom.artCameraFlash.classList.add('animate-camera-flash');
     }
 
+    // Phase 3 (The Capture): Use hidden <canvas> element and drawImage(video, 0, 0)
     const video = this.dom.webcamVideo;
-    const canvas = document.createElement('canvas');
+    const canvas = this.dom.artCaptureCanvas || document.createElement('canvas');
     const w = (video && video.videoWidth > 0) ? video.videoWidth : 640;
     const h = (video && video.videoHeight > 0) ? video.videoHeight : 480;
     canvas.width = w;
@@ -1570,7 +1692,7 @@ class FreezeDanceGame {
     const hasLiveVideo = video && video.readyState >= 2 && video.videoWidth > 0;
 
     if (hasLiveVideo) {
-      // Horizontal flip so mirrored view matches polaroid photo 1:1
+      // Mirrored webcam feed: flip horizontally so drawing text/image is not inverted
       ctx.translate(w, 0);
       ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0, w, h);
@@ -1579,98 +1701,218 @@ class FreezeDanceGame {
       this.drawArtMockupOnCanvas(ctx, w, h);
     }
 
+    // Hide the live video feed
+    if (this.dom.webcamVideo) {
+      this.dom.webcamVideo.classList.add('hidden');
+    }
+    if (this.dom.overlayCanvas) {
+      this.dom.overlayCanvas.classList.add('hidden');
+    }
+
     this.artCapturedDataUrl = canvas.toDataURL('image/png');
     this.showArtShowcase();
   }
 
   drawArtMockupOnCanvas(ctx, w, h) {
-    // Fill pastel paper canvas
-    ctx.fillStyle = '#fefdfa';
+    // Fill soft pastel paper canvas
+    ctx.fillStyle = '#faf8f5';
     ctx.fillRect(0, 0, w, h);
 
-    // Subtle border
+    // Subtle paper edge border
     ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 10;
-    ctx.strokeRect(5, 5, w - 10, h - 10);
+    ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, w - 8, h - 8);
 
-    // Soft sky gradient
+    // Pastel gradient sky
     const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.7);
-    skyGrad.addColorStop(0, '#e0f2fe');
+    skyGrad.addColorStop(0, '#eff6ff');
     skyGrad.addColorStop(1, '#f0fdf4');
     ctx.fillStyle = skyGrad;
-    ctx.fillRect(10, 10, w - 20, h * 0.7);
+    ctx.fillRect(8, 8, w - 16, h * 0.7);
 
-    // Rolling green hill
+    // Rolling soft green meadow
     ctx.beginPath();
-    ctx.moveTo(10, h * 0.75);
-    ctx.quadraticCurveTo(w * 0.5, h * 0.56, w - 10, h * 0.72);
-    ctx.lineTo(w - 10, h - 10);
-    ctx.lineTo(10, h - 10);
+    ctx.moveTo(8, h * 0.72);
+    ctx.quadraticCurveTo(w * 0.45, h * 0.62, w - 8, h * 0.70);
+    ctx.lineTo(w - 8, h - 8);
+    ctx.lineTo(8, h - 8);
     ctx.closePath();
-    ctx.fillStyle = '#86efac';
+    ctx.fillStyle = '#bbf7d0';
     ctx.fill();
 
-    // Smiling Sun
+    // Friendly yellow sun in top right corner
     ctx.beginPath();
-    ctx.arc(w * 0.82, h * 0.25, Math.min(w, h) * 0.12, 0, Math.PI * 2);
-    ctx.fillStyle = '#fde047';
+    ctx.arc(w * 0.82, h * 0.22, Math.min(w, h) * 0.12, 0, Math.PI * 2);
+    ctx.fillStyle = '#fef08a';
     ctx.fill();
-    ctx.strokeStyle = '#f59e0b';
+    ctx.strokeStyle = '#facc15';
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Sun rays
-    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
-      const rx1 = w * 0.82 + Math.cos(angle) * (Math.min(w, h) * 0.14);
-      const ry1 = h * 0.25 + Math.sin(angle) * (Math.min(w, h) * 0.14);
-      const rx2 = w * 0.82 + Math.cos(angle) * (Math.min(w, h) * 0.19);
-      const ry2 = h * 0.25 + Math.sin(angle) * (Math.min(w, h) * 0.19);
-      ctx.beginPath();
-      ctx.moveTo(rx1, ry1);
-      ctx.lineTo(rx2, ry2);
-      ctx.stroke();
-    }
-
-    // Happy Tree Trunk
-    const trunkW = w * 0.08;
-    const trunkH = h * 0.35;
-    ctx.fillStyle = '#b45309';
-    ctx.fillRect(w * 0.38 - trunkW / 2, h * 0.55, trunkW, trunkH);
-
-    // Big green foliage canopy
-    ctx.beginPath();
-    ctx.arc(w * 0.38, h * 0.42, Math.min(w, h) * 0.24, 0, Math.PI * 2);
-    ctx.fillStyle = '#22c55e';
-    ctx.fill();
-    ctx.strokeStyle = '#15803d';
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    // Smiling face on tree
+    // Sun smile & cheeks
     ctx.fillStyle = '#1e293b';
     ctx.beginPath();
-    ctx.arc(w * 0.33, h * 0.40, 5, 0, Math.PI * 2);
-    ctx.arc(w * 0.43, h * 0.40, 5, 0, Math.PI * 2);
+    ctx.arc(w * 0.79, h * 0.20, 3, 0, Math.PI * 2);
+    ctx.arc(w * 0.85, h * 0.20, 3, 0, Math.PI * 2);
     ctx.fill();
-
     ctx.beginPath();
-    ctx.arc(w * 0.38, h * 0.42, 16, 0.2, Math.PI - 0.2, false);
-    ctx.lineWidth = 3;
+    ctx.arc(w * 0.82, h * 0.22, 8, 0.2, Math.PI - 0.2, false);
+    ctx.lineWidth = 2;
     ctx.strokeStyle = '#1e293b';
     ctx.stroke();
 
-    // Rosy cheeks
-    ctx.fillStyle = 'rgba(244, 63, 94, 0.4)';
+    // Cute Crayon Elephant
+    const cx = w * 0.48;
+    const cy = h * 0.52;
+    const scale = Math.min(w, h) / 400;
+
+    // Elephant Tail
     ctx.beginPath();
-    ctx.arc(w * 0.30, h * 0.43, 8, 0, Math.PI * 2);
-    ctx.arc(w * 0.46, h * 0.43, 8, 0, Math.PI * 2);
+    ctx.moveTo(cx - 75 * scale, cy + 30 * scale);
+    ctx.quadraticCurveTo(cx - 100 * scale, cy + 45 * scale, cx - 95 * scale, cy + 65 * scale);
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 5 * scale;
+    ctx.stroke();
+    // Tail brush
+    ctx.beginPath();
+    ctx.arc(cx - 95 * scale, cy + 68 * scale, 6 * scale, 0, Math.PI * 2);
+    ctx.fillStyle = '#3b82f6';
     ctx.fill();
 
-    // Drawing title text
+    // Back legs
+    ctx.fillStyle = '#60a5fa';
+    ctx.beginPath();
+    ctx.roundRect(cx - 60 * scale, cy + 35 * scale, 26 * scale, 55 * scale, [10 * scale]);
+    ctx.roundRect(cx + 15 * scale, cy + 35 * scale, 26 * scale, 55 * scale, [10 * scale]);
+    ctx.fill();
+
+    // Elephant Main Body
+    ctx.beginPath();
+    ctx.arc(cx - 15 * scale, cy + 20 * scale, 65 * scale, 0, Math.PI * 2);
+    ctx.fillStyle = '#93c5fd';
+    ctx.fill();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 4 * scale;
+    ctx.stroke();
+
+    // Front legs
+    ctx.fillStyle = '#93c5fd';
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 3.5 * scale;
+    // Front left leg
+    ctx.beginPath();
+    ctx.roundRect(cx - 40 * scale, cy + 40 * scale, 28 * scale, 58 * scale, [12 * scale]);
+    ctx.fill();
+    ctx.stroke();
+    // Front right leg
+    ctx.beginPath();
+    ctx.roundRect(cx - 5 * scale, cy + 40 * scale, 28 * scale, 58 * scale, [12 * scale]);
+    ctx.fill();
+    ctx.stroke();
+
+    // Toenails
+    ctx.fillStyle = '#ffffff';
+    [-34, -26, -18, 1, 9, 17].forEach(offset => {
+      ctx.beginPath();
+      ctx.arc(cx + offset * scale, cy + 94 * scale, 3.5 * scale, Math.PI, 0);
+      ctx.fill();
+    });
+
+    // Elephant Head
+    ctx.beginPath();
+    ctx.arc(cx + 40 * scale, cy - 10 * scale, 48 * scale, 0, Math.PI * 2);
+    ctx.fillStyle = '#93c5fd';
+    ctx.fill();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 4 * scale;
+    ctx.stroke();
+
+    // Big Floppy Left/Outer Ear
+    ctx.beginPath();
+    ctx.ellipse(cx + 15 * scale, cy - 12 * scale, 28 * scale, 42 * scale, -0.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#bfdbfe';
+    ctx.fill();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 3.5 * scale;
+    ctx.stroke();
+
+    // Inner pink ear
+    ctx.beginPath();
+    ctx.ellipse(cx + 15 * scale, cy - 12 * scale, 18 * scale, 28 * scale, -0.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#fbcfe8';
+    ctx.fill();
+
+    // Curved Happy Trunk (pointing upwards happily)
+    ctx.beginPath();
+    ctx.moveTo(cx + 70 * scale, cy - 5 * scale);
+    ctx.quadraticCurveTo(cx + 98 * scale, cy + 2 * scale, cx + 105 * scale, cy - 25 * scale);
+    ctx.quadraticCurveTo(cx + 108 * scale, cy - 40 * scale, cx + 95 * scale, cy - 45 * scale);
+    ctx.quadraticCurveTo(cx + 82 * scale, cy - 35 * scale, cx + 88 * scale, cy - 18 * scale);
+    ctx.quadraticCurveTo(cx + 80 * scale, cy + 12 * scale, cx + 60 * scale, cy + 10 * scale);
+    ctx.closePath();
+    ctx.fillStyle = '#93c5fd';
+    ctx.fill();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 3.5 * scale;
+    ctx.stroke();
+
+    // Big Cute Cartoon Eye
+    ctx.beginPath();
+    ctx.arc(cx + 52 * scale, cy - 20 * scale, 9 * scale, 0, Math.PI * 2);
     ctx.fillStyle = '#1e293b';
-    ctx.font = 'bold 20px Fredoka, sans-serif';
+    ctx.fill();
+    // Catchlight shines
+    ctx.beginPath();
+    ctx.arc(cx + 50 * scale, cy - 22 * scale, 3.5 * scale, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx + 55 * scale, cy - 17 * scale, 1.8 * scale, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // Rosy Pink Cheek
+    ctx.beginPath();
+    ctx.ellipse(cx + 42 * scale, cy + 2 * scale, 8 * scale, 5 * scale, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(244, 114, 182, 0.7)';
+    ctx.fill();
+
+    // Cheerful Smile
+    ctx.beginPath();
+    ctx.arc(cx + 58 * scale, cy - 2 * scale, 9 * scale, 0.2, Math.PI - 0.4, false);
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 2.5 * scale;
+    ctx.stroke();
+
+    // Little White Tusk
+    ctx.beginPath();
+    ctx.moveTo(cx + 66 * scale, cy + 3 * scale);
+    ctx.quadraticCurveTo(cx + 74 * scale, cy + 7 * scale, cx + 76 * scale, cy - 2 * scale);
+    ctx.quadraticCurveTo(cx + 70 * scale, cy - 1 * scale, cx + 66 * scale, cy + 3 * scale);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.5 * scale;
+    ctx.stroke();
+
+    // Flowers in the meadow
+    const flowerColors = ['#f43f5e', '#ec4899', '#8b5cf6', '#eab308'];
+    [w * 0.15, w * 0.25, w * 0.75, w * 0.88].forEach((fx, idx) => {
+      ctx.beginPath();
+      ctx.arc(fx, h * 0.85, 8 * scale, 0, Math.PI * 2);
+      ctx.fillStyle = flowerColors[idx % flowerColors.length];
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(fx, h * 0.85, 3.5 * scale, 0, Math.PI * 2);
+      ctx.fillStyle = '#fef08a';
+      ctx.fill();
+    });
+
+    // Crayon title caption
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 22px Fredoka, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('My Happy Drawing! 🌟', w / 2, h - 25);
+    ctx.fillText('🐘 Cute Elephant (Crayon Art)', w / 2, h - 22);
   }
 
   showArtShowcase() {
@@ -1690,7 +1932,7 @@ class FreezeDanceGame {
     }
     if (this.dom.artPolaroidDate) {
       const now = new Date();
-      this.dom.artPolaroidDate.textContent = `Frolic Forest • ${now.toLocaleDateString()}`;
+      this.dom.artPolaroidDate.textContent = `Show & Tell Art Studio • ${now.toLocaleDateString()}`;
     }
 
     // Award 20 Energy Coins!
@@ -1700,11 +1942,15 @@ class FreezeDanceGame {
     soundEngine.playVictoryChime();
     this.launchConfetti();
 
-    // Puppy Voice Cheer: "Wow! Paw-some drawing! I love it!"
-    voiceEngine.speak("Wow! Paw-some drawing! I love it!", { pitch: 1.6, rate: 1.1 });
+    // Synchronize Mascot Speech Bubble & Web Speech API:
+    // "Wow! Your art is saved! Beautiful work!"
+    const phase3Cheer = "Wow! Your art is saved! Beautiful work!";
+    if (this.dom.artMascotSpeech3) this.dom.artMascotSpeech3.textContent = phase3Cheer;
+    if (this.dom.artMascotSpeechLeft) this.dom.artMascotSpeechLeft.textContent = phase3Cheer;
+    voiceEngine.speak(phase3Cheer, { pitch: 1.6, rate: 1.1 });
 
-    this.dom.statusText.textContent = '🌟 Paw-some drawing! +20 Energy Coins awarded!';
-    this.dom.feedbackText.textContent = 'Drawing preserved in the polaroid frame!';
+    this.dom.statusText.textContent = '🌟 Wow! Your art is saved! Beautiful work! (+20 Coins)';
+    this.dom.feedbackText.textContent = 'Your crayon drawing is preserved in the polaroid frame!';
     this.dom.simulateBtn.innerHTML = '<span>🎨</span> Next Art Prompt';
   }
 
@@ -1718,6 +1964,376 @@ class FreezeDanceGame {
     a.click();
     document.body.removeChild(a);
     soundEngine.playSuccessBubble();
+  }
+
+  /**
+   * ============================================================
+   * ACTIVITY 6: GESTURE BUILDER MODE
+   * ============================================================
+   */
+  startGestureBuilderMode() {
+    soundEngine.init();
+    voiceEngine.initVoices();
+    soundEngine.playBgMusic();
+    this.isGameRunning = true;
+    this.currentPhase = PHASES.IDLE;
+
+    // Ensure webcam is active and visible
+    if (this.dom.webcamVideo) this.dom.webcamVideo.classList.remove('hidden');
+    if (this.dom.overlayCanvas) this.dom.overlayCanvas.classList.remove('hidden');
+    if (this.dom.cameraPlaceholder) this.dom.cameraPlaceholder.classList.add('hidden');
+
+    if (!this.tracker.isRunning && !this.isSimulating) {
+      this.startCamera().catch(e => console.warn('Gesture builder camera startup warning:', e));
+    }
+
+    this.resetGestureBuilder();
+
+    // Puppy Voice Prompt
+    voiceEngine.speak("Arf! Let's build a house! Reach wide and hold your hand over shapes to grab them!", { pitch: 1.6, rate: 1.1 });
+
+    this.dom.statusText.textContent = 'Gesture Builder: Stretch your arms, hold hand for 0.5s to grab, and drag to the blueprint!';
+    this.dom.feedbackText.textContent = 'Stretch your arms wide to reach the scattered shapes on the edges!';
+  }
+
+  resetGestureBuilder() {
+    this.builderSnappedShapes = { roof: false, body: false, door: false };
+    this.builderGrabbedShape = null;
+    this.builderHoverTarget = null;
+    this.builderHoverStartTime = 0;
+    this.builderCompleted = false;
+
+    // Reset Win Card
+    if (this.dom.builderWinCard) this.dom.builderWinCard.classList.add('hidden');
+
+    // Reset glowing blueprint
+    if (this.dom.houseBlueprint) this.dom.houseBlueprint.classList.remove('house-glowing');
+
+    // Reset snapped slots
+    if (this.dom.snappedRoof) this.dom.snappedRoof.classList.add('hidden');
+    if (this.dom.snappedBody) this.dom.snappedBody.classList.add('hidden');
+    if (this.dom.snappedDoor) this.dom.snappedDoor.classList.add('hidden');
+
+    // Reset draggable scattered shapes
+    const resetShape = (el, defaultTop, defaultLeft, defaultRight, defaultBottom) => {
+      if (!el) return;
+      el.classList.remove('opacity-0', 'pointer-events-none');
+      el.style.left = defaultLeft || '';
+      el.style.right = defaultRight || '';
+      el.style.top = defaultTop || '';
+      el.style.bottom = defaultBottom || '';
+      el.style.transform = '';
+      el.style.zIndex = '30';
+    };
+
+    resetShape(this.dom.shapeSourceRoof, '24%', '', '', '');
+    resetShape(this.dom.shapeSourceDoor, '', '', '', '16%');
+    resetShape(this.dom.shapeSourceBody, '42%', '', '', '');
+
+    // Reset Checklist
+    if (this.dom.badgeRoofStatus) {
+      this.dom.badgeRoofStatus.textContent = 'Waiting';
+      this.dom.badgeRoofStatus.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-stone-200 text-slate-600';
+    }
+    if (this.dom.badgeBodyStatus) {
+      this.dom.badgeBodyStatus.textContent = 'Waiting';
+      this.dom.badgeBodyStatus.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-stone-200 text-slate-600';
+    }
+    if (this.dom.badgeDoorStatus) {
+      this.dom.badgeDoorStatus.textContent = 'Waiting';
+      this.dom.badgeDoorStatus.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-stone-200 text-slate-600';
+    }
+
+    if (this.dom.builderProgressBadge) {
+      this.dom.builderProgressBadge.textContent = '0 of 3 Shapes Placed';
+    }
+    if (this.dom.builderShapesBadge) {
+      this.dom.builderShapesBadge.textContent = '0 / 3 Snapped';
+    }
+
+    if (this.dom.builderHandCursor) {
+      this.dom.builderHandCursor.classList.add('hidden');
+    }
+    if (this.dom.builderGrabRing) {
+      this.dom.builderGrabRing.style.strokeDashoffset = '125.6';
+    }
+  }
+
+  setupBuilderMouseTouchControls() {
+    ['roof', 'body', 'door'].forEach(key => {
+      const el = this.dom[`shapeSource${key.charAt(0).toUpperCase() + key.slice(1)}`];
+      if (!el) return;
+
+      el.addEventListener('pointerdown', (e) => {
+        if (this.gameMode !== GAME_MODES.GESTURE_BUILDER || this.builderSnappedShapes[key]) return;
+        this.builderGrabbedShape = key;
+        soundEngine.playPop();
+        this.dom.feedbackText.textContent = `✋ Grabbed the ${key.toUpperCase()}! Now drag it into the blueprint slot!`;
+      });
+    });
+
+    ['roof', 'body', 'door'].forEach(key => {
+      const slotEl = this.dom[`slot${key.charAt(0).toUpperCase() + key.slice(1)}`];
+      if (!slotEl) return;
+      slotEl.style.pointerEvents = 'auto';
+      slotEl.style.cursor = 'pointer';
+      slotEl.addEventListener('click', () => {
+        if (this.gameMode !== GAME_MODES.GESTURE_BUILDER) return;
+        if (this.builderGrabbedShape === key || !this.builderSnappedShapes[key]) {
+          this.snapBuilderShape(key);
+        }
+      });
+    });
+
+    if (this.dom.builderGameOverlay) {
+      this.dom.builderGameOverlay.addEventListener('pointermove', (e) => {
+        if (this.gameMode !== GAME_MODES.GESTURE_BUILDER || !this.builderGrabbedShape) return;
+        const container = this.dom.cameraContainer;
+        if (!container) return;
+        const containerRect = container.getBoundingClientRect();
+        const screenPercentX = Math.max(0, Math.min(100, ((e.clientX - containerRect.left) / containerRect.width) * 100));
+        const screenPercentY = Math.max(0, Math.min(100, ((e.clientY - containerRect.top) / containerRect.height) * 100));
+
+        if (this.dom.builderHandCursor) {
+          this.dom.builderHandCursor.classList.remove('hidden');
+          this.dom.builderHandCursor.style.left = `${screenPercentX}%`;
+          this.dom.builderHandCursor.style.top = `${screenPercentY}%`;
+        }
+
+        const sourceEl = this.dom[`shapeSource${this.builderGrabbedShape.charAt(0).toUpperCase() + this.builderGrabbedShape.slice(1)}`];
+        if (sourceEl) {
+          sourceEl.style.left = `${screenPercentX}%`;
+          sourceEl.style.top = `${screenPercentY}%`;
+          sourceEl.style.transform = 'translate(-50%, -50%) scale(1.15)';
+          sourceEl.style.zIndex = '45';
+        }
+
+        const slotEl = this.dom[`slot${this.builderGrabbedShape.charAt(0).toUpperCase() + this.builderGrabbedShape.slice(1)}`];
+        if (slotEl) {
+          const slotRect = slotEl.getBoundingClientRect();
+          if (
+            e.clientX >= slotRect.left - 20 &&
+            e.clientX <= slotRect.right + 20 &&
+            e.clientY >= slotRect.top - 20 &&
+            e.clientY <= slotRect.bottom + 20
+          ) {
+            this.snapBuilderShape(this.builderGrabbedShape);
+          }
+        }
+      });
+    }
+  }
+
+  checkBuilderGesture(landmarks) {
+    if (this.builderCompleted || !landmarks || !this.dom.cameraContainer) return;
+    const container = this.dom.cameraContainer;
+    const containerRect = container.getBoundingClientRect();
+    if (!containerRect.width || !containerRect.height) return;
+
+    // Track index fingertip (preferred for air-grab) or wrist
+    const ri = landmarks[LANDMARKS.RIGHT_INDEX];
+    const li = landmarks[LANDMARKS.LEFT_INDEX];
+    const rw = landmarks[LANDMARKS.RIGHT_WRIST];
+    const lw = landmarks[LANDMARKS.LEFT_WRIST];
+
+    let activePoint = null;
+    if (ri && ri.visibility > 0.35) {
+      activePoint = ri;
+    } else if (li && li.visibility > 0.35) {
+      activePoint = li;
+    } else if (rw && rw.visibility > 0.35) {
+      activePoint = rw;
+    } else if (lw && lw.visibility > 0.35) {
+      activePoint = lw;
+    }
+
+    if (!activePoint) {
+      if (this.dom.builderHandCursor) this.dom.builderHandCursor.classList.add('hidden');
+      this.builderHoverTarget = null;
+      if (this.dom.builderGrabRing) this.dom.builderGrabRing.style.strokeDashoffset = '125.6';
+      return;
+    }
+
+    // Video is mirrored horizontally, so screenX is (1.0 - activePoint.x) * 100%
+    const screenPercentX = (1.0 - activePoint.x) * 100;
+    const screenPercentY = activePoint.y * 100;
+    const handPxX = containerRect.left + (screenPercentX / 100) * containerRect.width;
+    const handPxY = containerRect.top + (screenPercentY / 100) * containerRect.height;
+
+    // Draw soft glowing cursor
+    if (this.dom.builderHandCursor) {
+      this.dom.builderHandCursor.classList.remove('hidden');
+      this.dom.builderHandCursor.style.left = `${screenPercentX}%`;
+      this.dom.builderHandCursor.style.top = `${screenPercentY}%`;
+    }
+
+    // If a shape is currently attached/grabbed:
+    if (this.builderGrabbedShape) {
+      const key = this.builderGrabbedShape;
+      const sourceEl = this.dom[`shapeSource${key.charAt(0).toUpperCase() + key.slice(1)}`];
+      if (sourceEl) {
+        sourceEl.style.left = `${screenPercentX}%`;
+        sourceEl.style.top = `${screenPercentY}%`;
+        sourceEl.style.transform = 'translate(-50%, -50%) scale(1.15)';
+        sourceEl.style.zIndex = '45';
+      }
+
+      // Check overlap with blueprint slot
+      const slotEl = this.dom[`slot${key.charAt(0).toUpperCase() + key.slice(1)}`];
+      if (slotEl) {
+        const slotRect = slotEl.getBoundingClientRect();
+        const dist = Math.hypot(handPxX - (slotRect.left + slotRect.width / 2), handPxY - (slotRect.top + slotRect.height / 2));
+        const threshold = Math.max(slotRect.width, slotRect.height) * 0.7;
+
+        if (dist < threshold) {
+          this.snapBuilderShape(key);
+        }
+      }
+      return;
+    }
+
+    // No shape grabbed: Check hovering over unsnapped shapes
+    const unsnappedKeys = ['roof', 'body', 'door'].filter(k => !this.builderSnappedShapes[k]);
+    let hoveredKey = null;
+
+    for (const key of unsnappedKeys) {
+      const el = this.dom[`shapeSource${key.charAt(0).toUpperCase() + key.slice(1)}`];
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        if (
+          handPxX >= rect.left - 35 &&
+          handPxX <= rect.right + 35 &&
+          handPxY >= rect.top - 35 &&
+          handPxY <= rect.bottom + 35
+        ) {
+          hoveredKey = key;
+          break;
+        }
+      }
+    }
+
+    if (hoveredKey) {
+      const now = performance.now();
+      if (this.builderHoverTarget !== hoveredKey) {
+        this.builderHoverTarget = hoveredKey;
+        this.builderHoverStartTime = now;
+      }
+
+      const elapsed = now - this.builderHoverStartTime;
+      const progress = Math.min(1.0, elapsed / 500); // 0.5s requirement
+
+      if (this.dom.builderGrabRing) {
+        const circumference = 125.6;
+        this.dom.builderGrabRing.style.strokeDashoffset = (circumference * (1.0 - progress)).toString();
+      }
+
+      this.dom.feedbackText.textContent = `Holding over ${hoveredKey.toUpperCase()}... (${Math.round((0.5 - elapsed / 1000) * 10) / 10}s)`;
+
+      if (elapsed >= 500) {
+        // Air-Grab attached!
+        this.builderGrabbedShape = hoveredKey;
+        this.builderHoverTarget = null;
+        if (this.dom.builderGrabRing) this.dom.builderGrabRing.style.strokeDashoffset = '125.6';
+        soundEngine.playPop();
+        this.dom.feedbackText.textContent = `✋ Grabbed the ${hoveredKey.toUpperCase()}! Now drag it across into the blueprint slot!`;
+      }
+    } else {
+      this.builderHoverTarget = null;
+      if (this.dom.builderGrabRing) this.dom.builderGrabRing.style.strokeDashoffset = '125.6';
+    }
+  }
+
+  snapBuilderShape(shapeKey) {
+    if (this.builderSnappedShapes[shapeKey]) return;
+    this.builderSnappedShapes[shapeKey] = true;
+
+    // Satisfying mechanical 'click' sound
+    soundEngine.playCameraShutter();
+
+    // Hide source shape
+    const sourceEl = this.dom[`shapeSource${shapeKey.charAt(0).toUpperCase() + shapeKey.slice(1)}`];
+    if (sourceEl) {
+      sourceEl.classList.add('opacity-0', 'pointer-events-none');
+      sourceEl.style.transform = '';
+    }
+
+    // Reveal snapped blueprint element
+    const snappedEl = this.dom[`snapped${shapeKey.charAt(0).toUpperCase() + shapeKey.slice(1)}`];
+    if (snappedEl) {
+      snappedEl.classList.remove('hidden');
+    }
+
+    // Release grab
+    this.builderGrabbedShape = null;
+    this.builderHoverTarget = null;
+    if (this.dom.builderGrabRing) this.dom.builderGrabRing.style.strokeDashoffset = '125.6';
+
+    // Update Checklist badge
+    const badgeEl = this.dom[`badge${shapeKey.charAt(0).toUpperCase() + shapeKey.slice(1)}Status`];
+    if (badgeEl) {
+      badgeEl.textContent = 'Placed! ✅';
+      badgeEl.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800';
+    }
+
+    // Update Counts
+    const count = Object.values(this.builderSnappedShapes).filter(Boolean).length;
+    if (this.dom.builderProgressBadge) {
+      this.dom.builderProgressBadge.textContent = `${count} of 3 Shapes Placed`;
+    }
+    if (this.dom.builderShapesBadge) {
+      this.dom.builderShapesBadge.textContent = `${count} / 3 Snapped`;
+    }
+
+    this.dom.statusText.textContent = `✨ ${shapeKey.toUpperCase()} snapped into place! (${count}/3 complete)`;
+    this.dom.feedbackText.textContent = count === 3 ? 'All shapes snapped! Building complete!' : 'Great job! Reach for the next shape!';
+
+    if (count === 3) {
+      this.triggerBuilderWin();
+    }
+  }
+
+  triggerBuilderWin() {
+    if (this.builderCompleted) return;
+    this.builderCompleted = true;
+
+    // Animate the house glowing with warm magical pulse
+    if (this.dom.houseBlueprint) {
+      this.dom.houseBlueprint.classList.add('house-glowing');
+    }
+
+    // Award 20 Energy Coins
+    this.awardCoins(20);
+
+    // Audio & Visual celebratory effects
+    soundEngine.playVictoryChime();
+    this.launchConfetti();
+
+    // Puppy Voice Cheer: "Paw-some building! You made a beautiful house!"
+    voiceEngine.speak("Paw-some building! You made a beautiful house!", { pitch: 1.6, rate: 1.1 });
+
+    this.dom.statusText.textContent = '🏡 Paw-some building! You made a beautiful house! (+20 Coins)';
+    this.dom.feedbackText.textContent = 'House completed! All 3 shapes snapped into place!';
+    this.dom.simulateBtn.innerHTML = '<span>🔄</span> Build Another House';
+
+    setTimeout(() => {
+      if (this.dom.builderWinCard) {
+        this.dom.builderWinCard.classList.remove('hidden');
+      }
+    }, 1200);
+  }
+
+  simulateNextBuilderShape() {
+    if (this.builderCompleted) {
+      this.resetGestureBuilder();
+      return;
+    }
+
+    const nextShape = ['roof', 'body', 'door'].find(k => !this.builderSnappedShapes[k]);
+    if (nextShape) {
+      this.snapBuilderShape(nextShape);
+    } else {
+      this.resetGestureBuilder();
+    }
   }
 
   get currentPose() {
@@ -2056,6 +2672,11 @@ class FreezeDanceGame {
    * MediaPipe Pose landmark reception
    */
   onPoseLandmarks(landmarks) {
+    if (this.gameMode === GAME_MODES.GESTURE_BUILDER) {
+      this.checkBuilderGesture(landmarks);
+      return;
+    }
+
     if (this.gameMode === GAME_MODES.SHOOT_THE_POTS) {
       this.checkPotsCollision(landmarks);
       return;
@@ -2353,6 +2974,11 @@ class FreezeDanceGame {
 
       // Advance to next word
       this.nextPotWord();
+      return;
+    }
+
+    if (this.gameMode === GAME_MODES.GESTURE_BUILDER) {
+      this.simulateNextBuilderShape();
       return;
     }
 
