@@ -370,4 +370,129 @@ body {
   touch-action: none;
 }
 
+/* ============================================================
+ * ACTIVITY 4: THE MAGIC ROWING BOAT ANIMATIONS & STYLES
+ * ============================================================ */
+@keyframes riverWaterFlow {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 360px;
+  }
+}
+
+.river-water-bg {
+  background: linear-gradient(180deg, #ecfeff 0%, #cffafe 35%, #bae6fd 75%, #a5f3fc 100%);
+  background-image: 
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.4) 0%, transparent 70%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0px, rgba(255, 255, 255, 0.25) 12px, transparent 12px, transparent 48px);
+  background-size: 100% 100%, 100% 360px;
+  animation: riverWaterFlow 3.5s linear infinite;
+}
+
+@keyframes oarStrokeLeft {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-30deg); }
+}
+
+@keyframes oarStrokeRight {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(30deg); }
+}
+
+.oar-stroking-left {
+  animation: oarStrokeLeft 0.45s ease-in-out;
+}
+
+.oar-stroking-right {
+  animation: oarStrokeRight 0.45s ease-in-out;
+}
+
+@keyframes boatBump {
+  0%, 100% { transform: translate(-50%, -50%) rotate(var(--boat-rot, 0deg)); }
+  25% { transform: translate(calc(-50% - 8px), -50%) rotate(calc(var(--boat-rot, 0deg) - 4deg)) scale(0.95); }
+  50% { transform: translate(calc(-50% + 8px), -50%) rotate(calc(var(--boat-rot, 0deg) + 4deg)) scale(0.97); }
+  75% { transform: translate(calc(-50% - 4px), -50%) rotate(calc(var(--boat-rot, 0deg) - 2deg)); }
+}
+
+.boat-bump-shake {
+  animation: boatBump 0.45s ease-out;
+}
+
+@keyframes foodBob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.08); }
+}
+
+.food-bobbing {
+  animation: foodBob 1.4s infinite ease-in-out;
+}
+
+@keyframes waterRipplePulse {
+  0% { transform: scale(0.85); opacity: 0.8; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+.water-ripple-pulse {
+  animation: waterRipplePulse 1.6s infinite ease-out;
+}
+
+/* ============================================================
+ * CATCH THE FALLING OBJECTS: AR BASKET & OBJECT ANIMATIONS
+ * ============================================================ */
+@keyframes basketCatchPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.basket-catch-pop {
+  animation: basketCatchPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes basketOopsShake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  20% { transform: translateX(-8px) rotate(-6deg); }
+  40% { transform: translateX(8px) rotate(6deg); }
+  60% { transform: translateX(-5px) rotate(-3deg); }
+  80% { transform: translateX(5px) rotate(3deg); }
+}
+
+.basket-oops-shake {
+  animation: basketOopsShake 0.4s ease-out;
+}
+
+@keyframes fallingWobble {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+
+.falling-wobble {
+  animation: fallingWobble 1.2s infinite ease-in-out;
+}
+
+/* ============================================================
+ * ZERO-TOUCH MENU: HAND HOVER CURSOR & ACCESSIBILITY STYLES
+ * ============================================================ */
+.menu-btn-hovered {
+  transform: scale(1.05) translateY(-4px) !important;
+  box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.25), 0 8px 10px -6px rgba(16, 185, 129, 0.2) !important;
+  border-color: #10b981 !important;
+  outline: 4px solid #a7f3d0 !important;
+}
+
+.menu-hover-progress {
+  transition: width 0.08s linear;
+}
+
+@keyframes cursorPulseGlow {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+.cursor-pulse {
+  animation: cursorPulseGlow 1.4s infinite ease-in-out;
+}
+
 

@@ -19,7 +19,9 @@ export const GAME_MODES = {
   VEGETABLE_YOGA: 'VEGETABLE_YOGA',
   SHOOT_THE_POTS: 'SHOOT_THE_POTS',
   SHOW_AND_TELL_ART: 'SHOW_AND_TELL_ART',
-  GESTURE_BUILDER: 'GESTURE_BUILDER'
+  GESTURE_BUILDER: 'GESTURE_BUILDER',
+  ROWING_BOAT: 'ROWING_BOAT',
+  FALLING_OBJECTS: 'FALLING_OBJECTS'
 };
 
 export const AGE_GROUPS = {
@@ -111,6 +113,36 @@ class FreezeDanceGame {
     this.builderHoverTarget = null;
     this.builderHoverStartTime = 0;
     this.builderCompleted = false;
+
+    // Activity 4: The Magic Rowing Boat state
+    this.rowingBoatX = 50;
+    this.rowingTargetBoatX = 50;
+    this.rowingBoatY = 72;
+    this.rowingBoatRot = 0;
+    this.rowingSpeed = 1.0;
+    this.rowingFoodsCollected = 0;
+    this.rowingCompleted = false;
+    this.rowingLeanDirection = 'CENTER';
+    this.rowingPrevLeftWrist = null;
+    this.rowingPrevRightWrist = null;
+    this.rowingEntities = [];
+    this.rowingRipples = [];
+    this.rowingLastSpawnTime = 0;
+    this.rowingLastRippleTime = 0;
+    this.rowingLastOarStrokeTime = 0;
+    this.rowingLastFrameTime = 0;
+    this.rowingAnimLoopId = null;
+    
+    // Activity: Catch the Falling Objects state
+    this.fallingBasketX = 50;
+    this.fallingTargetBasketX = 50;
+    this.fallingScore = 0;
+    this.fallingCompleted = false;
+    this.fallingObjects = [];
+    this.fallingLastSpawnTime = 0;
+    this.fallingLastFrameTime = 0;
+    this.fallingAnimLoopId = null;
+    this.fallingBasketWobbleTimeout = null;
     
     // Phase timers
     this.actionDuration = 5.0; // 5 seconds
@@ -133,6 +165,15 @@ class FreezeDanceGame {
     this.soundMuted = false;
     this.isGameRunning = false;
     this.autoRestartTimer = null;
+
+    // Global Air-Cursor & Hover-to-Click Engine state (Zero-Touch System)
+    this.airCursorX = null;
+    this.airCursorY = null;
+    this.airDwellTarget = null;
+    this.airDwellStartTime = 0;
+    this.airDwellDuration = 1500; // 1.5 seconds dwell timer
+    this.lastSpokenCard = null;
+    this.autoReturnInterval = null;
 
     // Cache DOM Elements
     this.dom = {
@@ -347,6 +388,84 @@ class FreezeDanceGame {
       builderWinCard: document.getElementById('builder-win-card'),
       btnBuilderReplay: document.getElementById('btn-builder-replay'),
       btnBuilderBackMenu: document.getElementById('btn-builder-back-menu'),
+
+      // Activity 4: The Magic Rowing Boat DOM Elements
+      btnModeRowing: document.getElementById('btn-mode-rowing'),
+      rowingQuestHud: document.getElementById('rowing-quest-hud'),
+      rowingSnacksHudBadge: document.getElementById('rowing-snacks-hud-badge'),
+      rowingSpeedHudBadge: document.getElementById('rowing-speed-hud-badge'),
+      rowingModeView: document.getElementById('rowing-mode-view'),
+      rowingMissionBadge: document.getElementById('rowing-mission-badge'),
+      rowingLeanStatus: document.getElementById('rowing-lean-status'),
+      leanIndicatorLeft: document.getElementById('lean-indicator-left'),
+      leanIndicatorCenter: document.getElementById('lean-indicator-center'),
+      leanIndicatorRight: document.getElementById('lean-indicator-right'),
+      rowingSpeedText: document.getElementById('rowing-speed-text'),
+      rowingSpeedBar: document.getElementById('rowing-speed-bar'),
+      rowingSnacksCountText: document.getElementById('rowing-snacks-count-text'),
+      btnRowingReset: document.getElementById('btn-rowing-reset'),
+      rowingGameOverlay: document.getElementById('rowing-game-overlay'),
+      rowingTopHint: document.getElementById('rowing-top-hint'),
+      rowingRipplesContainer: document.getElementById('rowing-ripples-container'),
+      rowingEntitiesContainer: document.getElementById('rowing-entities-container'),
+      rowingEffectsContainer: document.getElementById('rowing-effects-container'),
+      rowingBoat: document.getElementById('rowing-boat'),
+      rowingOarLeft: document.getElementById('rowing-oar-left'),
+      rowingOarRight: document.getElementById('rowing-oar-right'),
+      rowingWinCard: document.getElementById('rowing-win-card'),
+      btnRowingReplay: document.getElementById('btn-rowing-replay'),
+      btnRowingBackMenu: document.getElementById('btn-rowing-back-menu'),
+
+      // Activity: Catch the Falling Objects DOM Elements
+      btnModeFalling: document.getElementById('btn-mode-falling'),
+      fallingQuestHud: document.getElementById('falling-quest-hud'),
+      fallingScoreHudBadge: document.getElementById('falling-score-hud-badge'),
+      fallingModeView: document.getElementById('falling-mode-view'),
+      fallingMissionBadge: document.getElementById('falling-mission-badge'),
+      fallingPositionIndicator: document.getElementById('falling-position-indicator'),
+      fallingTrackingStatus: document.getElementById('falling-tracking-status'),
+      fallingBasketCountText: document.getElementById('falling-basket-count-text'),
+      btnFallingReset: document.getElementById('btn-falling-reset'),
+      fallingGameOverlay: document.getElementById('falling-game-overlay'),
+      fallingOverlayScore: document.getElementById('falling-overlay-score'),
+      fallingOverlayCount: document.getElementById('falling-overlay-count'),
+      fallingStatusBanner: document.getElementById('falling-status-banner'),
+      fallingStatusBannerText: document.getElementById('falling-status-banner-text'),
+      fallingObjectsContainer: document.getElementById('falling-objects-container'),
+      fallingEffectsContainer: document.getElementById('falling-effects-container'),
+      fallingHeadTracker: document.getElementById('falling-head-tracker'),
+      fallingBasket: document.getElementById('falling-basket'),
+      fallingBasketInner: document.getElementById('falling-basket-inner'),
+      fallingBasketRim: document.getElementById('falling-basket-rim'),
+      fallingWinCard: document.getElementById('falling-win-card'),
+      btnFallingReplay: document.getElementById('btn-falling-replay'),
+      btnFallingBackMenu: document.getElementById('btn-falling-back-menu'),
+
+      // Global Air-Cursor DOM Elements (#air-cursor)
+      airCursor: document.getElementById('air-cursor') || document.getElementById('menu-hand-cursor'),
+      airCursorProgressRing: document.getElementById('air-cursor-progress-ring') || document.getElementById('menu-cursor-progress-ring'),
+      airCursorBadge: document.getElementById('air-cursor-badge') || document.getElementById('menu-cursor-badge'),
+
+      // Animated Circular Victory Timer Elements
+      artCircularRing: document.getElementById('art-circular-ring'),
+      artAutoCountdown: document.getElementById('art-auto-countdown'),
+      artCircularSec: document.getElementById('art-circular-sec'),
+
+      builderCircularRing: document.getElementById('builder-circular-ring'),
+      builderAutoCountdown: document.getElementById('builder-auto-countdown'),
+      builderCircularSec: document.getElementById('builder-circular-sec'),
+
+      rowingCircularRing: document.getElementById('rowing-circular-ring'),
+      rowingAutoCountdown: document.getElementById('rowing-auto-countdown'),
+      rowingCircularSec: document.getElementById('rowing-circular-sec'),
+
+      fallingCircularRing: document.getElementById('falling-circular-ring'),
+      fallingAutoCountdown: document.getElementById('falling-auto-countdown'),
+      fallingCircularSec: document.getElementById('falling-circular-sec'),
+
+      celebrationCircularRing: document.getElementById('celebration-circular-ring'),
+      autoRestartCountdown: document.getElementById('auto-restart-countdown'),
+      celebrationCircularSec: document.getElementById('celebration-circular-sec'),
     };
 
     this.init();
@@ -357,12 +476,13 @@ class FreezeDanceGame {
     this.renderPoseDots();
     this.loadPose(0); // Starts on initial pose
     this.setupEventListeners();
+    this.setupAirCursorPointerFallback();
 
     // Initialize Pose Tracker (does NOT start camera until user clicks Start Game)
     this.tracker = new PoseTracker({
       videoElement: this.dom.webcamVideo,
       canvasElement: this.dom.overlayCanvas,
-      onLandmarks: (landmarks) => this.onPoseLandmarks(landmarks),
+      onLandmarks: (landmarks, results) => this.onPoseLandmarks(landmarks, results),
       onStatusChange: (status) => this.onTrackerStatus(status),
     });
 
@@ -484,6 +604,36 @@ class FreezeDanceGame {
     }
     this.setupBuilderMouseTouchControls();
 
+    // Activity 4: The Magic Rowing Boat Event Listeners
+    if (this.dom.btnModeRowing) {
+      this.dom.btnModeRowing.addEventListener('click', () => this.selectMode(GAME_MODES.ROWING_BOAT));
+    }
+    if (this.dom.btnRowingReset) {
+      this.dom.btnRowingReset.addEventListener('click', () => this.resetRowingBoat());
+    }
+    if (this.dom.btnRowingReplay) {
+      this.dom.btnRowingReplay.addEventListener('click', () => this.resetRowingBoat());
+    }
+    if (this.dom.btnRowingBackMenu) {
+      this.dom.btnRowingBackMenu.addEventListener('click', () => this.openModeSelectionModal());
+    }
+    this.setupRowingControls();
+
+    // Activity: Catch the Falling Objects Event Listeners
+    if (this.dom.btnModeFalling) {
+      this.dom.btnModeFalling.addEventListener('click', () => this.selectMode(GAME_MODES.FALLING_OBJECTS));
+    }
+    if (this.dom.btnFallingReset) {
+      this.dom.btnFallingReset.addEventListener('click', () => this.resetFallingObjects());
+    }
+    if (this.dom.btnFallingReplay) {
+      this.dom.btnFallingReplay.addEventListener('click', () => this.resetFallingObjects());
+    }
+    if (this.dom.btnFallingBackMenu) {
+      this.dom.btnFallingBackMenu.addEventListener('click', () => this.openModeSelectionModal());
+    }
+    this.setupFallingControls();
+
     // Celebration modal instant restart button
     this.dom.nextRoundBtn.addEventListener('click', () => {
       this.closeCelebration();
@@ -525,40 +675,491 @@ class FreezeDanceGame {
       console.warn('Camera startup warning:', e);
     }
 
-    // 5. Open Sub-Menu & speak cute puppy welcome
+    // 5. Open Sub-Menu (audio prompt will play automatically)
     this.openModeSelectionModal();
-    voiceEngine.speak("Arf! Let's play together! Pick a game!", { pitch: 1.6, rate: 1.1 });
   }
 
   openModeSelectionModal() {
+    this.clearAutoReturnTimer();
     this.closeAgeSelectionModal();
+    if (this.dom.celebrationModal) {
+      this.dom.celebrationModal.classList.add('hidden');
+    }
+    if (this.dom.builderWinCard) {
+      this.dom.builderWinCard.classList.add('hidden');
+    }
+    if (this.dom.rowingWinCard) {
+      this.dom.rowingWinCard.classList.add('hidden');
+    }
+    if (this.dom.fallingWinCard) {
+      this.dom.fallingWinCard.classList.add('hidden');
+    }
+    if (this.dom.artShowcaseScreen) {
+      this.dom.artShowcaseScreen.classList.add('hidden');
+    }
     if (this.dom.modeSelectionModal) {
       this.dom.modeSelectionModal.classList.remove('hidden');
     }
+    // Voice-First Menu Guidance (Requirement 2):
+    // "When the Main Menu loads, automatically trigger the puppy voice: 'Arf! Move your paw in the air and hover over a game to choose it!'"
+    voiceEngine.speak("Arf! Move your paw in the air and hover over a game to choose it!", { pitch: 1.6, rate: 1.1 });
+    this.resetAirCursorDwell();
   }
 
   closeModeSelectionModal() {
     if (this.dom.modeSelectionModal) {
       this.dom.modeSelectionModal.classList.add('hidden');
     }
+    this.resetAirCursorDwell();
   }
 
   openAgeSelectionModal() {
+    this.clearAutoReturnTimer();
     this.closeModeSelectionModal();
     if (this.dom.ageSelectionModal) {
       this.dom.ageSelectionModal.classList.remove('hidden');
     }
+    voiceEngine.speak("Arf! Move your paw in the air and hover over your age to start!", { pitch: 1.6, rate: 1.1 });
+    this.resetAirCursorDwell();
   }
 
   closeAgeSelectionModal() {
     if (this.dom.ageSelectionModal) {
       this.dom.ageSelectionModal.classList.add('hidden');
     }
+    this.resetAirCursorDwell();
   }
 
   closeAgeSelectionModalAndReopenMenu() {
     this.closeAgeSelectionModal();
     this.openModeSelectionModal();
+  }
+
+  /**
+   * Checks if either Main Mode Selection Menu or Age Selection Menu is open
+   */
+  isAnyMenuOpen() {
+    const isModeMenuOpen = this.dom.modeSelectionModal && !this.dom.modeSelectionModal.classList.contains('hidden');
+    const isAgeMenuOpen = this.dom.ageSelectionModal && !this.dom.ageSelectionModal.classList.contains('hidden');
+    return Boolean(isModeMenuOpen || isAgeMenuOpen);
+  }
+
+  /**
+   * Checks if any celebration modal or activity completion card is open
+   */
+  isWinModalOpen() {
+    return Boolean(
+      (this.dom.celebrationModal && !this.dom.celebrationModal.classList.contains('hidden')) ||
+      (this.dom.artShowcaseScreen && !this.dom.artShowcaseScreen.classList.contains('hidden')) ||
+      (this.dom.builderWinCard && !this.dom.builderWinCard.classList.contains('hidden')) ||
+      (this.dom.rowingWinCard && !this.dom.rowingWinCard.classList.contains('hidden')) ||
+      (this.dom.fallingWinCard && !this.dom.fallingWinCard.classList.contains('hidden'))
+    );
+  }
+
+  /**
+   * Extracts target coordinate from MediaPipe Hands (index fingertip [0][8])
+   * or MediaPipe Pose (index fingertip [20]/[19] or wrist [16]/[15]).
+   */
+  getAirCursorTarget(landmarks, results) {
+    // 1. MediaPipe Hands index fingertip (multiHandLandmarks[0][8])
+    if (results && results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+      const hand = results.multiHandLandmarks[0];
+      if (hand && hand[8]) {
+        return { x: hand[8].x, y: hand[8].y };
+      }
+    }
+
+    // 2. MediaPipe Pose landmarks
+    const lm = landmarks || (results && results.poseLandmarks);
+    if (!lm) return null;
+
+    const rIndex = lm[LANDMARKS.RIGHT_INDEX || 20];
+    const lIndex = lm[LANDMARKS.LEFT_INDEX || 19];
+    const rWrist = lm[LANDMARKS.RIGHT_WRIST || 16];
+    const lWrist = lm[LANDMARKS.LEFT_WRIST || 15];
+
+    const candidates = [];
+    if (rIndex && (rIndex.visibility === undefined || rIndex.visibility > 0.25)) {
+      candidates.push(rIndex);
+    } else if (rWrist && (rWrist.visibility === undefined || rWrist.visibility > 0.25)) {
+      candidates.push(rWrist);
+    }
+
+    if (lIndex && (lIndex.visibility === undefined || lIndex.visibility > 0.25)) {
+      candidates.push(lIndex);
+    } else if (lWrist && (lWrist.visibility === undefined || lWrist.visibility > 0.25)) {
+      candidates.push(lWrist);
+    }
+
+    if (candidates.length === 0) return null;
+    return candidates.length === 1 ? candidates[0] : (candidates[0].y < candidates[1].y ? candidates[0] : candidates[1]);
+  }
+
+  /**
+   * Returns currently active/visible interactive buttons for air-cursor hit testing
+   */
+  getVisibleInteractiveButtons() {
+    if (this.dom.ageSelectionModal && !this.dom.ageSelectionModal.classList.contains('hidden')) {
+      return Array.from(this.dom.ageSelectionModal.querySelectorAll('button'));
+    }
+    if (this.dom.modeSelectionModal && !this.dom.modeSelectionModal.classList.contains('hidden')) {
+      return Array.from(this.dom.modeSelectionModal.querySelectorAll('button'));
+    }
+    if (this.dom.initialStartModal && !this.dom.initialStartModal.classList.contains('opacity-0') && !this.dom.initialStartModal.classList.contains('hidden')) {
+      return [this.dom.initialStartBtn].filter(Boolean);
+    }
+    if (this.dom.celebrationModal && !this.dom.celebrationModal.classList.contains('hidden')) {
+      return Array.from(this.dom.celebrationModal.querySelectorAll('button'));
+    }
+    if (this.dom.builderWinCard && !this.dom.builderWinCard.classList.contains('hidden')) {
+      return Array.from(this.dom.builderWinCard.querySelectorAll('button'));
+    }
+    if (this.dom.rowingWinCard && !this.dom.rowingWinCard.classList.contains('hidden')) {
+      return Array.from(this.dom.rowingWinCard.querySelectorAll('button'));
+    }
+    if (this.dom.fallingWinCard && !this.dom.fallingWinCard.classList.contains('hidden')) {
+      return Array.from(this.dom.fallingWinCard.querySelectorAll('button'));
+    }
+    if (this.dom.artShowcaseScreen && !this.dom.artShowcaseScreen.classList.contains('hidden')) {
+      return Array.from(this.dom.artShowcaseScreen.querySelectorAll('button'));
+    }
+
+    // Default: visible interactive buttons across header/page
+    const allButtons = Array.from(document.querySelectorAll('button, [role="button"]'));
+    return allButtons.filter(btn => {
+      if (btn.classList.contains('hidden') || btn.offsetParent === null) return false;
+      const rect = btn.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    });
+  }
+
+  /**
+   * GLOBAL AIR-CURSOR & HOVER-TO-CLICK ENGINE:
+   * 1. Maps detected index fingertip or wrist to viewport dimensions
+   * 2. Smooths coordinates using linear interpolation (lerp: currentPos += (targetPos - currentPos) * 0.2)
+   * 3. Detects bounding box intersection (getBoundingClientRect)
+   * 4. 1.5s dwell timer animates SVG circular progress ring from 0% to 100%
+   * 5. Plays soft bubble-pop chime and triggers element.click() on 1.5s completion
+   */
+  updateAirCursor(landmarks, results) {
+    if (this.gameMode === GAME_MODES.GESTURE_BUILDER && !this.isAnyMenuOpen() && !this.isWinModalOpen()) {
+      if (this.dom.airCursor) {
+        this.dom.airCursor.classList.add('hidden');
+      }
+      if (this.airDwellTarget) {
+        this.resetAirCursorDwell();
+      }
+      return;
+    }
+
+    const rawTarget = this.getAirCursorTarget(landmarks, results);
+    if (!rawTarget) {
+      if (this.dom.airCursor) {
+        this.dom.airCursor.classList.add('hidden');
+      }
+      if (this.airDwellTarget) {
+        this.resetAirCursorDwell();
+      }
+      return;
+    }
+
+    // Map coordinate to viewport dimensions (webcam is horizontally mirrored, so screenX is (1 - x) * innerWidth)
+    const targetX = (1.0 - rawTarget.x) * window.innerWidth;
+    const targetY = rawTarget.y * window.innerHeight;
+
+    // Smooth coordinates using lerp: currentPos += (targetPos - currentPos) * 0.2
+    if (this.airCursorX === null || this.airCursorY === null) {
+      this.airCursorX = targetX;
+      this.airCursorY = targetY;
+    } else {
+      this.airCursorX += (targetX - this.airCursorX) * 0.2;
+      this.airCursorY += (targetY - this.airCursorY) * 0.2;
+    }
+
+    const curX = this.airCursorX;
+    const curY = this.airCursorY;
+
+    // Render air cursor position
+    if (this.dom.airCursor) {
+      this.dom.airCursor.classList.remove('hidden');
+      this.dom.airCursor.style.left = `${curX}px`;
+      this.dom.airCursor.style.top = `${curY}px`;
+    }
+
+    // Hit-test interactive buttons
+    const buttons = this.getVisibleInteractiveButtons();
+    let hoveredBtn = null;
+
+    for (const btn of buttons) {
+      const rect = btn.getBoundingClientRect();
+      if (
+        curX >= rect.left - 12 &&
+        curX <= rect.right + 12 &&
+        curY >= rect.top - 12 &&
+        curY <= rect.bottom + 12
+      ) {
+        hoveredBtn = btn;
+        break;
+      }
+    }
+
+    const DWELL_MS = 1500; // 1.5-second dwell timer
+    const CIRCUMFERENCE = 263.89;
+
+    if (hoveredBtn) {
+      if (this.airDwellTarget === hoveredBtn) {
+        // Increment dwell timer
+        const elapsed = performance.now() - this.airDwellStartTime;
+        const progress = Math.min(1.0, elapsed / DWELL_MS);
+        const remainingSec = Math.max(0, (DWELL_MS - elapsed) / 1000).toFixed(1);
+
+        // Animate SVG circular progress ring from 0% to 100% over 1.5s
+        if (this.dom.airCursorProgressRing) {
+          const offset = CIRCUMFERENCE * (1.0 - progress);
+          this.dom.airCursorProgressRing.style.strokeDashoffset = `${offset}`;
+        }
+        if (this.dom.airCursorBadge) {
+          this.dom.airCursorBadge.textContent = `${remainingSec}s`;
+        }
+
+        // Animate button internal bar if present
+        const cardBar = hoveredBtn.querySelector('.menu-hover-progress');
+        if (cardBar) {
+          cardBar.style.width = `${progress * 100}%`;
+        }
+
+        // Dwell complete!
+        if (elapsed >= DWELL_MS) {
+          soundEngine.playBubblePopChime();
+          const targetToClick = hoveredBtn;
+          this.resetAirCursorDwell();
+          targetToClick.click();
+        }
+      } else {
+        // Switched to a new button
+        this.resetAirCursorDwell();
+        this.airDwellTarget = hoveredBtn;
+        this.airDwellStartTime = performance.now();
+        hoveredBtn.classList.add('menu-btn-hovered');
+
+        if (this.dom.airCursorProgressRing) {
+          this.dom.airCursorProgressRing.style.strokeDashoffset = `${CIRCUMFERENCE}`;
+        }
+        if (this.dom.airCursorBadge) {
+          this.dom.airCursorBadge.textContent = '1.5s';
+        }
+
+        // Speak activity name softly so pre-readers know what they are selecting (Requirement 2)
+        this.speakActivityNameOnHover(hoveredBtn);
+      }
+    } else {
+      // Hand moved off button before 1.5s: cancel timer and reset ring
+      if (this.airDwellTarget) {
+        this.resetAirCursorDwell();
+      }
+      this.lastSpokenCard = null;
+    }
+  }
+
+  /**
+   * Voice-First Menu Guidance: Speaks activity name softly when hovering over an activity card
+   */
+  speakActivityNameOnHover(btn) {
+    if (!btn || btn === this.lastSpokenCard) return;
+    this.lastSpokenCard = btn;
+
+    const titleEl = btn.querySelector('h3');
+    let title = titleEl ? titleEl.textContent.trim() : null;
+
+    if (!title) {
+      if (btn.id === 'btn-mode-freeze') title = 'Freeze Dance';
+      else if (btn.id === 'btn-mode-fruit') title = 'Fruit Yoga';
+      else if (btn.id === 'btn-mode-veg') title = 'Vegetable Yoga';
+      else if (btn.id === 'btn-mode-pots') title = 'Shoot the Pots';
+      else if (btn.id === 'btn-mode-art') title = 'Show and Tell Art';
+      else if (btn.id === 'btn-mode-builder') title = 'Gesture Builder';
+      else if (btn.id === 'btn-mode-rowing') title = 'The Magic Rowing Boat';
+      else if (btn.id === 'btn-mode-falling') title = 'Catch the Falling Food';
+      else if (btn.id === 'btn-age-4-5') title = 'Age four to five';
+      else if (btn.id === 'btn-age-6-8') title = 'Age six to eight';
+      else if (btn.id === 'initial-start-btn') title = 'Start Game';
+    }
+
+    if (title) {
+      voiceEngine.speak(title, { pitch: 1.6, rate: 1.1, playChime: false, volume: 0.85 });
+    }
+  }
+
+  /**
+   * Cancels dwell timer and resets SVG progress ring and hover styles
+   */
+  resetAirCursorDwell() {
+    this.airDwellTarget = null;
+    this.airDwellStartTime = 0;
+    const CIRCUMFERENCE = 263.89;
+
+    if (this.dom.airCursorProgressRing) {
+      this.dom.airCursorProgressRing.style.strokeDashoffset = `${CIRCUMFERENCE}`;
+    }
+    if (this.dom.airCursorBadge) {
+      this.dom.airCursorBadge.textContent = '1.5s';
+    }
+
+    document.querySelectorAll('.menu-btn-hovered').forEach(el => {
+      el.classList.remove('menu-btn-hovered');
+    });
+    document.querySelectorAll('.menu-hover-progress').forEach(el => {
+      el.style.width = '0%';
+    });
+  }
+
+  resetMenuHoverState() {
+    this.resetAirCursorDwell();
+  }
+
+  /**
+   * Desktop Pointer Fallback (Requirement 4):
+   * Keeps standard mouse/touch click events active while enabling smooth hover testing with pointer
+   */
+  setupAirCursorPointerFallback() {
+    window.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'mouse' && (!this.tracker || !this.tracker.isRunning)) {
+        this.airCursorX = e.clientX;
+        this.airCursorY = e.clientY;
+        if (this.dom.airCursor) {
+          this.dom.airCursor.classList.remove('hidden');
+          this.dom.airCursor.style.left = `${this.airCursorX}px`;
+          this.dom.airCursor.style.top = `${this.airCursorY}px`;
+        }
+      }
+    });
+
+    const buttons = document.querySelectorAll('button, [role="button"]');
+    buttons.forEach((btn) => {
+      let pointerTimer = null;
+      let startPTime = 0;
+      const DWELL_MS = 1500;
+
+      btn.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'mouse') {
+          btn.classList.add('menu-btn-hovered');
+          startPTime = performance.now();
+          const cardBar = btn.querySelector('.menu-hover-progress');
+          this.speakActivityNameOnHover(btn);
+
+          if (pointerTimer) clearInterval(pointerTimer);
+          pointerTimer = setInterval(() => {
+            const elapsed = performance.now() - startPTime;
+            const progress = Math.min(1.0, elapsed / DWELL_MS);
+            if (cardBar) cardBar.style.width = `${progress * 100}%`;
+            if (this.dom.airCursorProgressRing) {
+              const offset = 263.89 * (1.0 - progress);
+              this.dom.airCursorProgressRing.style.strokeDashoffset = `${offset}`;
+            }
+
+            if (elapsed >= DWELL_MS) {
+              clearInterval(pointerTimer);
+              pointerTimer = null;
+              btn.classList.remove('menu-btn-hovered');
+              if (cardBar) cardBar.style.width = '0%';
+              soundEngine.playBubblePopChime();
+              btn.click();
+            }
+          }, 40);
+        }
+      });
+
+      btn.addEventListener('pointerleave', () => {
+        if (pointerTimer) {
+          clearInterval(pointerTimer);
+          pointerTimer = null;
+        }
+        btn.classList.remove('menu-btn-hovered');
+        const cardBar = btn.querySelector('.menu-hover-progress');
+        if (cardBar) cardBar.style.width = '0%';
+        if (this.dom.airCursorProgressRing) {
+          this.dom.airCursorProgressRing.style.strokeDashoffset = '263.89';
+        }
+        this.lastSpokenCard = null;
+      });
+    });
+  }
+
+  /**
+   * Hands-Free Activity Completion Loop (Requirement 3):
+   * Cheerful victory banner with 5-second animated circular timer and puppy voice countdown.
+   * Automatically transitions back to Main Menu at 0 seconds.
+   */
+  startAutoReturnCountdown(optionsOrNumberEl, legacyRingOrProgressEl, legacySeconds = 5, legacyOnComplete = null) {
+    this.clearAutoReturnTimer();
+
+    let ringEl = null;
+    let numberEl = null;
+    let secTextEl = null;
+    let seconds = 5;
+    let onComplete = null;
+
+    if (optionsOrNumberEl && typeof optionsOrNumberEl === 'object' && !(optionsOrNumberEl instanceof HTMLElement)) {
+      ringEl = optionsOrNumberEl.ringEl || null;
+      numberEl = optionsOrNumberEl.numberEl || null;
+      secTextEl = optionsOrNumberEl.secTextEl || null;
+      seconds = typeof optionsOrNumberEl.seconds === 'number' ? optionsOrNumberEl.seconds : 5;
+      onComplete = typeof optionsOrNumberEl.onComplete === 'function' ? optionsOrNumberEl.onComplete : null;
+    } else {
+      numberEl = optionsOrNumberEl instanceof HTMLElement ? optionsOrNumberEl : null;
+      if (legacyRingOrProgressEl instanceof HTMLElement && legacyRingOrProgressEl.tagName.toLowerCase() === 'circle') {
+        ringEl = legacyRingOrProgressEl;
+      }
+      seconds = typeof legacySeconds === 'number' ? legacySeconds : 5;
+      onComplete = typeof legacyOnComplete === 'function' ? legacyOnComplete : null;
+    }
+
+    // Puppy voice announcement (Requirement 3):
+    // "Paw-some job! Going back to the playground in 5... 4... 3... 2... 1!"
+    voiceEngine.speak("Paw-some job! Going back to the playground in 5... 4... 3... 2... 1!", { pitch: 1.6, rate: 1.1 });
+
+    const CIRCUMFERENCE = 251.33; // 2 * pi * 40
+    const duration = seconds * 1000;
+    const startTime = performance.now();
+
+    if (numberEl) numberEl.textContent = `${seconds}`;
+    if (secTextEl) secTextEl.textContent = `${seconds}`;
+    if (ringEl) {
+      ringEl.style.strokeDasharray = `${CIRCUMFERENCE}`;
+      ringEl.style.strokeDashoffset = '0';
+    }
+
+    this.autoReturnInterval = setInterval(() => {
+      const elapsed = performance.now() - startTime;
+      const remaining = Math.max(0, duration - elapsed);
+      const remainingSec = Math.ceil(remaining / 1000);
+
+      if (numberEl) numberEl.textContent = `${remainingSec}`;
+      if (secTextEl) secTextEl.textContent = `${remainingSec}`;
+
+      // Animate circular timer ring
+      if (ringEl) {
+        const progress = remaining / duration; // 1.0 -> 0.0
+        const offset = CIRCUMFERENCE * (1.0 - progress);
+        ringEl.style.strokeDashoffset = `${offset}`;
+      }
+
+      if (remaining <= 0) {
+        this.clearAutoReturnTimer();
+        if (typeof onComplete === 'function') {
+          onComplete();
+        }
+        this.openModeSelectionModal();
+      }
+    }, 50);
+  }
+
+  clearAutoReturnTimer() {
+    if (this.autoReturnInterval) {
+      clearInterval(this.autoReturnInterval);
+      this.autoReturnInterval = null;
+    }
   }
 
   selectPotsAgeGroup(ageGroup) {
@@ -573,9 +1174,11 @@ class FreezeDanceGame {
    * Switches game mode when user clicks an activity
    */
   selectMode(mode) {
+    this.clearAutoReturnTimer();
     this.closeModeSelectionModal();
     this.closeAgeSelectionModal();
     this.closeCelebration();
+    this.resetAirCursorDwell();
     this.gameMode = mode;
 
     // Reset common timers & states
@@ -586,6 +1189,14 @@ class FreezeDanceGame {
     if (this.artCountdownTimer) {
       clearInterval(this.artCountdownTimer);
       this.artCountdownTimer = null;
+    }
+    if (this.rowingAnimLoopId) {
+      cancelAnimationFrame(this.rowingAnimLoopId);
+      this.rowingAnimLoopId = null;
+    }
+    if (this.fallingAnimLoopId) {
+      cancelAnimationFrame(this.fallingAnimLoopId);
+      this.fallingAnimLoopId = null;
     }
     this.potsLocked = false;
     soundEngine.stopDanceBeat();
@@ -604,6 +1215,9 @@ class FreezeDanceGame {
       this.dom.yogaQuestHud.classList.add('hidden');
       this.dom.potsQuestHud.classList.add('hidden');
       if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
+      if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.add('hidden');
+      if (this.dom.rowingQuestHud) this.dom.rowingQuestHud.classList.add('hidden');
+      if (this.dom.fallingQuestHud) this.dom.fallingQuestHud.classList.add('hidden');
       this.dom.itemWordBanner.classList.add('hidden');
 
       // Left Card: Pose View
@@ -611,11 +1225,15 @@ class FreezeDanceGame {
       this.dom.potsModeView.classList.add('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
       if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
+      if (this.dom.rowingModeView) this.dom.rowingModeView.classList.add('hidden');
+      if (this.dom.fallingModeView) this.dom.fallingModeView.classList.add('hidden');
 
       // Right Card: Hide Pots & Art Overlay
       this.dom.potsGameOverlay.classList.add('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
       if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
+      if (this.dom.rowingGameOverlay) this.dom.rowingGameOverlay.classList.add('hidden');
+      if (this.dom.fallingGameOverlay) this.dom.fallingGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>✨</span> Simulate Freeze Pose';
 
@@ -635,6 +1253,8 @@ class FreezeDanceGame {
       this.dom.potsQuestHud.classList.add('hidden');
       if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
       if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.add('hidden');
+      if (this.dom.rowingQuestHud) this.dom.rowingQuestHud.classList.add('hidden');
+      if (this.dom.fallingQuestHud) this.dom.fallingQuestHud.classList.add('hidden');
       this.dom.yogaQuestHud.classList.remove('hidden');
       this.dom.yogaQuestIcon.textContent = '🍎';
       this.dom.yogaQuestTitle.textContent = 'Fruit Yoga Adventure';
@@ -645,9 +1265,13 @@ class FreezeDanceGame {
       this.dom.potsModeView.classList.add('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
       if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
+      if (this.dom.rowingModeView) this.dom.rowingModeView.classList.add('hidden');
+      if (this.dom.fallingModeView) this.dom.fallingModeView.classList.add('hidden');
       this.dom.potsGameOverlay.classList.add('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
       if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
+      if (this.dom.rowingGameOverlay) this.dom.rowingGameOverlay.classList.add('hidden');
+      if (this.dom.fallingGameOverlay) this.dom.fallingGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>✨</span> Simulate Freeze Pose';
 
@@ -667,6 +1291,8 @@ class FreezeDanceGame {
       this.dom.potsQuestHud.classList.add('hidden');
       if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
       if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.add('hidden');
+      if (this.dom.rowingQuestHud) this.dom.rowingQuestHud.classList.add('hidden');
+      if (this.dom.fallingQuestHud) this.dom.fallingQuestHud.classList.add('hidden');
       this.dom.yogaQuestHud.classList.remove('hidden');
       this.dom.yogaQuestIcon.textContent = '🥕';
       this.dom.yogaQuestTitle.textContent = 'Vegetable Yoga Adventure';
@@ -677,9 +1303,13 @@ class FreezeDanceGame {
       this.dom.potsModeView.classList.add('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
       if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
+      if (this.dom.rowingModeView) this.dom.rowingModeView.classList.add('hidden');
+      if (this.dom.fallingModeView) this.dom.fallingModeView.classList.add('hidden');
       this.dom.potsGameOverlay.classList.add('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
       if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
+      if (this.dom.rowingGameOverlay) this.dom.rowingGameOverlay.classList.add('hidden');
+      if (this.dom.fallingGameOverlay) this.dom.fallingGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>✨</span> Simulate Freeze Pose';
 
@@ -696,17 +1326,23 @@ class FreezeDanceGame {
       this.dom.yogaQuestHud.classList.add('hidden');
       if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
       if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.add('hidden');
+      if (this.dom.rowingQuestHud) this.dom.rowingQuestHud.classList.add('hidden');
+      if (this.dom.fallingQuestHud) this.dom.fallingQuestHud.classList.add('hidden');
       this.dom.potsQuestHud.classList.remove('hidden');
 
       this.dom.poseModeView.classList.add('hidden');
       this.dom.potsModeView.classList.remove('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
       if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
+      if (this.dom.rowingModeView) this.dom.rowingModeView.classList.add('hidden');
+      if (this.dom.fallingModeView) this.dom.fallingModeView.classList.add('hidden');
 
       this.hideAllOverlays();
       this.dom.potsGameOverlay.classList.remove('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
       if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
+      if (this.dom.rowingGameOverlay) this.dom.rowingGameOverlay.classList.add('hidden');
+      if (this.dom.fallingGameOverlay) this.dom.fallingGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>💥</span> Smash Next Pot';
       this.dom.gameLoopIcon.textContent = '⏸️';
@@ -721,16 +1357,23 @@ class FreezeDanceGame {
       this.dom.yogaQuestHud.classList.add('hidden');
       this.dom.potsQuestHud.classList.add('hidden');
       if (this.dom.artQuestHud) this.dom.artQuestHud.classList.remove('hidden');
+      if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.add('hidden');
+      if (this.dom.rowingQuestHud) this.dom.rowingQuestHud.classList.add('hidden');
+      if (this.dom.fallingQuestHud) this.dom.fallingQuestHud.classList.add('hidden');
 
       this.dom.poseModeView.classList.add('hidden');
       this.dom.potsModeView.classList.add('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.remove('hidden');
       if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
+      if (this.dom.rowingModeView) this.dom.rowingModeView.classList.add('hidden');
+      if (this.dom.fallingModeView) this.dom.fallingModeView.classList.add('hidden');
 
       this.hideAllOverlays();
       this.dom.potsGameOverlay.classList.add('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.remove('hidden');
       if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
+      if (this.dom.rowingGameOverlay) this.dom.rowingGameOverlay.classList.add('hidden');
+      if (this.dom.fallingGameOverlay) this.dom.fallingGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>📸</span> Capture Snapshot';
       this.dom.gameLoopIcon.textContent = '🎨';
@@ -747,16 +1390,22 @@ class FreezeDanceGame {
       this.dom.potsQuestHud.classList.add('hidden');
       if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
       if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.remove('hidden');
+      if (this.dom.rowingQuestHud) this.dom.rowingQuestHud.classList.add('hidden');
+      if (this.dom.fallingQuestHud) this.dom.fallingQuestHud.classList.add('hidden');
 
       this.dom.poseModeView.classList.add('hidden');
       this.dom.potsModeView.classList.add('hidden');
       if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
       if (this.dom.builderModeView) this.dom.builderModeView.classList.remove('hidden');
+      if (this.dom.rowingModeView) this.dom.rowingModeView.classList.add('hidden');
+      if (this.dom.fallingModeView) this.dom.fallingModeView.classList.add('hidden');
 
       this.hideAllOverlays();
       this.dom.potsGameOverlay.classList.add('hidden');
       if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
       if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.remove('hidden');
+      if (this.dom.rowingGameOverlay) this.dom.rowingGameOverlay.classList.add('hidden');
+      if (this.dom.fallingGameOverlay) this.dom.fallingGameOverlay.classList.add('hidden');
 
       this.dom.simulateBtn.innerHTML = '<span>✋</span> Air-Grab & Snap';
       this.dom.gameLoopIcon.textContent = '🏠';
@@ -764,6 +1413,70 @@ class FreezeDanceGame {
 
       soundEngine.pausePotsBgMusic();
       this.startGestureBuilderMode();
+    } else if (mode === GAME_MODES.ROWING_BOAT) {
+      this.dom.currentModeBadge.textContent = 'Magic Rowing 🚣';
+      this.dom.currentModeBadge.className = 'text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-900 border border-cyan-200';
+
+      this.dom.phaseHudContainer.classList.add('hidden');
+      this.dom.yogaQuestHud.classList.add('hidden');
+      this.dom.potsQuestHud.classList.add('hidden');
+      if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
+      if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.add('hidden');
+      if (this.dom.rowingQuestHud) this.dom.rowingQuestHud.classList.remove('hidden');
+      if (this.dom.fallingQuestHud) this.dom.fallingQuestHud.classList.add('hidden');
+
+      this.dom.poseModeView.classList.add('hidden');
+      this.dom.potsModeView.classList.add('hidden');
+      if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
+      if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
+      if (this.dom.rowingModeView) this.dom.rowingModeView.classList.remove('hidden');
+      if (this.dom.fallingModeView) this.dom.fallingModeView.classList.add('hidden');
+
+      this.hideAllOverlays();
+      this.dom.potsGameOverlay.classList.add('hidden');
+      if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
+      if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
+      if (this.dom.rowingGameOverlay) this.dom.rowingGameOverlay.classList.remove('hidden');
+      if (this.dom.fallingGameOverlay) this.dom.fallingGameOverlay.classList.add('hidden');
+
+      this.dom.simulateBtn.innerHTML = '<span>🚣</span> Paddle & Steer';
+      this.dom.gameLoopIcon.textContent = '🚣';
+      this.dom.gameLoopText.textContent = 'Rowing Boat';
+
+      soundEngine.pausePotsBgMusic();
+      this.startRowingBoatMode();
+    } else if (mode === GAME_MODES.FALLING_OBJECTS) {
+      this.dom.currentModeBadge.textContent = 'Catch Food 🧺';
+      this.dom.currentModeBadge.className = 'text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200';
+
+      this.dom.phaseHudContainer.classList.add('hidden');
+      this.dom.yogaQuestHud.classList.add('hidden');
+      this.dom.potsQuestHud.classList.add('hidden');
+      if (this.dom.artQuestHud) this.dom.artQuestHud.classList.add('hidden');
+      if (this.dom.builderQuestHud) this.dom.builderQuestHud.classList.add('hidden');
+      if (this.dom.rowingQuestHud) this.dom.rowingQuestHud.classList.add('hidden');
+      if (this.dom.fallingQuestHud) this.dom.fallingQuestHud.classList.remove('hidden');
+
+      this.dom.poseModeView.classList.add('hidden');
+      this.dom.potsModeView.classList.add('hidden');
+      if (this.dom.artModeView) this.dom.artModeView.classList.add('hidden');
+      if (this.dom.builderModeView) this.dom.builderModeView.classList.add('hidden');
+      if (this.dom.rowingModeView) this.dom.rowingModeView.classList.add('hidden');
+      if (this.dom.fallingModeView) this.dom.fallingModeView.classList.remove('hidden');
+
+      this.hideAllOverlays();
+      this.dom.potsGameOverlay.classList.add('hidden');
+      if (this.dom.artGameOverlay) this.dom.artGameOverlay.classList.add('hidden');
+      if (this.dom.builderGameOverlay) this.dom.builderGameOverlay.classList.add('hidden');
+      if (this.dom.rowingGameOverlay) this.dom.rowingGameOverlay.classList.add('hidden');
+      if (this.dom.fallingGameOverlay) this.dom.fallingGameOverlay.classList.remove('hidden');
+
+      this.dom.simulateBtn.innerHTML = '<span>🧺</span> Catch Healthy Food';
+      this.dom.gameLoopIcon.textContent = '🧺';
+      this.dom.gameLoopText.textContent = 'Catch Foods';
+
+      soundEngine.pausePotsBgMusic();
+      this.startFallingObjectsMode();
     }
   }
 
@@ -1952,6 +2665,16 @@ class FreezeDanceGame {
     this.dom.statusText.textContent = '🌟 Wow! Your art is saved! Beautiful work! (+20 Coins)';
     this.dom.feedbackText.textContent = 'Your crayon drawing is preserved in the polaroid frame!';
     this.dom.simulateBtn.innerHTML = '<span>🎨</span> Next Art Prompt';
+
+    // 5-Second Auto-Return countdown to Main Menu for zero-touch child accessibility
+    setTimeout(() => {
+      this.startAutoReturnCountdown({
+        ringEl: this.dom.artCircularRing,
+        numberEl: this.dom.artAutoCountdown,
+        secTextEl: this.dom.artCircularSec,
+        seconds: 5
+      });
+    }, 1200);
   }
 
   downloadArtSnapshot() {
@@ -1997,6 +2720,7 @@ class FreezeDanceGame {
   }
 
   resetGestureBuilder() {
+    this.clearAutoReturnTimer();
     this.builderSnappedShapes = { roof: false, body: false, door: false };
     this.builderGrabbedShape = null;
     this.builderHoverTarget = null;
@@ -2318,6 +3042,12 @@ class FreezeDanceGame {
     setTimeout(() => {
       if (this.dom.builderWinCard) {
         this.dom.builderWinCard.classList.remove('hidden');
+        this.startAutoReturnCountdown({
+          ringEl: this.dom.builderCircularRing,
+          numberEl: this.dom.builderAutoCountdown,
+          secTextEl: this.dom.builderCircularSec,
+          seconds: 5
+        });
       }
     }, 1200);
   }
@@ -2333,6 +3063,1028 @@ class FreezeDanceGame {
       this.snapBuilderShape(nextShape);
     } else {
       this.resetGestureBuilder();
+    }
+  }
+
+  /**
+   * ============================================================
+   * ACTIVITY 4: THE MAGIC ROWING BOAT MODE
+   * ============================================================
+   */
+  startRowingBoatMode() {
+    soundEngine.init();
+    voiceEngine.initVoices();
+    soundEngine.playBgMusic();
+    this.isGameRunning = true;
+    this.currentPhase = PHASES.IDLE;
+
+    // Ensure webcam is active and visible
+    if (this.dom.webcamVideo) this.dom.webcamVideo.classList.remove('hidden');
+    if (this.dom.overlayCanvas) this.dom.overlayCanvas.classList.remove('hidden');
+    if (this.dom.cameraPlaceholder) this.dom.cameraPlaceholder.classList.add('hidden');
+
+    if (!this.tracker.isRunning && !this.isSimulating) {
+      this.startCamera().catch(e => console.warn('Rowing boat camera startup warning:', e));
+    }
+
+    this.resetRowingBoat();
+
+    // Puppy Voice Intro:
+    voiceEngine.speak("Arf! Sit on the floor! Row your arms to move, and lean your body to steer the boat!", { pitch: 1.6, rate: 1.1 });
+
+    this.dom.statusText.textContent = 'Rowing Boat: Sit on floor! Row arms to paddle & lean body to steer!';
+    this.dom.feedbackText.textContent = 'Sit on the floor! Move your arms to row and lean side-to-side to steer!';
+
+    // Start river loop
+    this.rowingLastFrameTime = performance.now();
+    this.startRowingLoop();
+  }
+
+  resetRowingBoat() {
+    this.clearAutoReturnTimer();
+    this.rowingBoatX = 50;
+    this.rowingTargetBoatX = 50;
+    this.rowingBoatY = 72;
+    this.rowingBoatRot = 0;
+    this.rowingSpeed = 1.0;
+    this.rowingFoodsCollected = 0;
+    this.rowingCompleted = false;
+    this.rowingLeanDirection = 'CENTER';
+    this.rowingPrevLeftWrist = null;
+    this.rowingPrevRightWrist = null;
+    this.rowingLastSpawnTime = performance.now();
+    this.rowingLastRippleTime = performance.now();
+    this.rowingLastOarStrokeTime = 0;
+
+    // Reset Win Card
+    if (this.dom.rowingWinCard) this.dom.rowingWinCard.classList.add('hidden');
+
+    // Clear entities & ripples DOM
+    if (this.dom.rowingEntitiesContainer) this.dom.rowingEntitiesContainer.innerHTML = '';
+    if (this.dom.rowingRipplesContainer) this.dom.rowingRipplesContainer.innerHTML = '';
+    if (this.dom.rowingEffectsContainer) this.dom.rowingEffectsContainer.innerHTML = '';
+    this.rowingEntities = [];
+    this.rowingRipples = [];
+
+    // Reset boat visual
+    if (this.dom.rowingBoat) {
+      this.dom.rowingBoat.style.left = '50%';
+      this.dom.rowingBoat.style.top = '72%';
+      this.dom.rowingBoat.style.setProperty('--boat-rot', '0deg');
+      this.dom.rowingBoat.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+      this.dom.rowingBoat.classList.remove('boat-bump-shake');
+    }
+
+    // Reset Checklist slots (5 snacks)
+    const foods = [
+      { id: 1, name: 'Apple', emoji: '🍎' },
+      { id: 2, name: 'Carrot', emoji: '🥕' },
+      { id: 3, name: 'Banana', emoji: '🍌' },
+      { id: 4, name: 'Berry', emoji: '🍓' },
+      { id: 5, name: 'Orange', emoji: '🍊' },
+    ];
+    foods.forEach(f => {
+      const slot = document.getElementById(`snack-slot-${f.id}`);
+      if (slot) {
+        slot.className = 'p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50';
+        slot.innerHTML = `<span class="text-xl">${f.emoji}</span><span class="text-[9px] font-black text-slate-600 mt-0.5">${f.name}</span>`;
+      }
+    });
+
+    if (this.dom.rowingSnacksCountText) this.dom.rowingSnacksCountText.textContent = '0 of 5';
+    if (this.dom.rowingMissionBadge) this.dom.rowingMissionBadge.textContent = '0 / 5 Snacks';
+    if (this.dom.rowingSnacksHudBadge) this.dom.rowingSnacksHudBadge.textContent = '🍎 0 of 5 Snacks Collected';
+    if (this.dom.rowingSpeedHudBadge) this.dom.rowingSpeedHudBadge.textContent = '⚡ Speed: Drifting';
+    if (this.dom.rowingSpeedText) this.dom.rowingSpeedText.textContent = 'Gentle Drift';
+    if (this.dom.rowingSpeedBar) this.dom.rowingSpeedBar.style.width = '25%';
+
+    this.updateRowingLeanIndicator('CENTER');
+  }
+
+  updateRowingLeanIndicator(dir) {
+    this.rowingLeanDirection = dir;
+    const leftEl = this.dom.leanIndicatorLeft;
+    const centerEl = this.dom.leanIndicatorCenter;
+    const rightEl = this.dom.leanIndicatorRight;
+
+    if (leftEl) leftEl.className = dir === 'LEFT' ? 'py-1 px-1 rounded-xl bg-cyan-500 text-white font-extrabold shadow-sm transition-all' : 'py-1 px-1 rounded-xl transition-all';
+    if (centerEl) centerEl.className = dir === 'CENTER' ? 'py-1 px-1 rounded-xl bg-cyan-100 text-cyan-900 font-extrabold transition-all' : 'py-1 px-1 rounded-xl transition-all';
+    if (rightEl) rightEl.className = dir === 'RIGHT' ? 'py-1 px-1 rounded-xl bg-cyan-500 text-white font-extrabold shadow-sm transition-all' : 'py-1 px-1 rounded-xl transition-all';
+
+    if (this.dom.rowingLeanStatus) {
+      if (dir === 'LEFT') this.dom.rowingLeanStatus.textContent = 'Leaning Left 🚣‍♂️';
+      else if (dir === 'RIGHT') this.dom.rowingLeanStatus.textContent = 'Leaning Right 🚣‍♀️';
+      else this.dom.rowingLeanStatus.textContent = 'Centered ⚓';
+    }
+  }
+
+  triggerOarStroke() {
+    const now = performance.now();
+    if (now - this.rowingLastOarStrokeTime < 280) return;
+    this.rowingLastOarStrokeTime = now;
+
+    if (this.dom.rowingOarLeft && this.dom.rowingOarRight) {
+      this.dom.rowingOarLeft.classList.remove('oar-stroking-left');
+      this.dom.rowingOarRight.classList.remove('oar-stroking-right');
+      void this.dom.rowingOarLeft.offsetWidth;
+      this.dom.rowingOarLeft.classList.add('oar-stroking-left');
+      this.dom.rowingOarRight.classList.add('oar-stroking-right');
+    }
+  }
+
+  updateRowingPose(landmarks) {
+    if (this.rowingCompleted || !landmarks) return;
+
+    // 1. STEERING (LEANING):
+    // Calculate midpoint between Left Shoulder (11) and Right Shoulder (12)
+    const ls = landmarks[LANDMARKS.LEFT_SHOULDER];
+    const rs = landmarks[LANDMARKS.RIGHT_SHOULDER];
+
+    if (ls && rs && ls.visibility > 0.35 && rs.visibility > 0.35) {
+      const midX = (ls.x + rs.x) / 2;
+      // Camera is horizontally mirrored (scaleX(-1)), so screenX is 1.0 - midX
+      const screenMidX = 1.0 - midX;
+      // Center axis is 0.5
+      const leanOffset = screenMidX - 0.5;
+
+      // Deadzone 0.05
+      if (leanOffset < -0.05) {
+        this.updateRowingLeanIndicator('LEFT');
+      } else if (leanOffset > 0.05) {
+        this.updateRowingLeanIndicator('RIGHT');
+      } else {
+        this.updateRowingLeanIndicator('CENTER');
+      }
+
+      // Map leanOffset to target boat X (20% to 80%)
+      const targetX = 50 + leanOffset * 105;
+      this.rowingTargetBoatX = Math.max(20, Math.min(80, targetX));
+    }
+
+    // 2. SPEED (ROWING):
+    // Track movement of left and right wrists (landmarks 15 and 16)
+    const lw = landmarks[LANDMARKS.LEFT_WRIST];
+    const rw = landmarks[LANDMARKS.RIGHT_WRIST];
+
+    if (lw && rw && lw.visibility > 0.3 && rw.visibility > 0.3) {
+      if (this.rowingPrevLeftWrist && this.rowingPrevRightWrist) {
+        const deltaLW = Math.hypot(lw.x - this.rowingPrevLeftWrist.x, lw.y - this.rowingPrevLeftWrist.y);
+        const deltaRW = Math.hypot(rw.x - this.rowingPrevRightWrist.x, rw.y - this.rowingPrevRightWrist.y);
+        const motion = (deltaLW + deltaRW) / 2;
+
+        // If wrists are moving significantly up and down or in circles
+        if (motion > 0.014) {
+          // Accelerate river scrolling speed
+          const boost = Math.min(0.5, motion * 7.0);
+          this.rowingSpeed = Math.min(3.2, this.rowingSpeed + boost);
+          this.triggerOarStroke();
+        }
+      }
+
+      this.rowingPrevLeftWrist = { x: lw.x, y: lw.y };
+      this.rowingPrevRightWrist = { x: rw.x, y: rw.y };
+    }
+  }
+
+  setupRowingControls() {
+    // Keyboard controls for testing / fallback (Arrow keys & Space)
+    window.addEventListener('keydown', (e) => {
+      if (this.gameMode !== GAME_MODES.ROWING_BOAT || this.rowingCompleted) return;
+
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        this.rowingTargetBoatX = Math.max(20, this.rowingTargetBoatX - 8);
+        this.updateRowingLeanIndicator('LEFT');
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        this.rowingTargetBoatX = Math.min(80, this.rowingTargetBoatX + 8);
+        this.updateRowingLeanIndicator('RIGHT');
+      } else if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w' || e.key === 'W') {
+        this.rowingSpeed = Math.min(3.2, this.rowingSpeed + 0.4);
+        this.triggerOarStroke();
+      }
+    });
+
+    // Mouse / Touch steering & paddle controls on the river overlay
+    if (this.dom.rowingGameOverlay) {
+      const handlePointer = (e) => {
+        if (this.gameMode !== GAME_MODES.ROWING_BOAT || this.rowingCompleted) return;
+        const rect = this.dom.rowingGameOverlay.getBoundingClientRect();
+        if (!rect.width) return;
+        const relX = ((e.clientX - rect.left) / rect.width) * 100;
+        this.rowingTargetBoatX = Math.max(20, Math.min(80, relX));
+
+        if (relX < 45) {
+          this.updateRowingLeanIndicator('LEFT');
+        } else if (relX > 55) {
+          this.updateRowingLeanIndicator('RIGHT');
+        } else {
+          this.updateRowingLeanIndicator('CENTER');
+        }
+
+        // Tap/click also paddles forward!
+        this.rowingSpeed = Math.min(3.2, this.rowingSpeed + 0.25);
+        this.triggerOarStroke();
+      };
+
+      this.dom.rowingGameOverlay.addEventListener('pointerdown', handlePointer);
+      this.dom.rowingGameOverlay.addEventListener('pointermove', (e) => {
+        if (e.buttons > 0) handlePointer(e);
+      });
+    }
+  }
+
+  startRowingLoop() {
+    if (this.rowingAnimLoopId) cancelAnimationFrame(this.rowingAnimLoopId);
+
+    const tick = (now) => {
+      if (this.gameMode !== GAME_MODES.ROWING_BOAT) return;
+
+      const dt = Math.min((now - this.rowingLastFrameTime) / 1000, 0.1);
+      this.rowingLastFrameTime = now;
+
+      if (!this.rowingCompleted) {
+        this.updateRowingRiver(dt, now);
+      }
+
+      this.rowingAnimLoopId = requestAnimationFrame(tick);
+    };
+
+    this.rowingAnimLoopId = requestAnimationFrame(tick);
+  }
+
+  updateRowingRiver(dt, now) {
+    // 1. Natural river water drag (decay speed towards gentle drift 1.0)
+    if (this.rowingSpeed > 1.0) {
+      this.rowingSpeed = Math.max(1.0, this.rowingSpeed - dt * 0.85);
+    } else if (this.rowingSpeed < 1.0) {
+      this.rowingSpeed = Math.min(1.0, this.rowingSpeed + dt * 0.5);
+    }
+
+    // 2. Smooth boat position & rotation interpolation
+    const prevX = this.rowingBoatX;
+    this.rowingBoatX += (this.rowingTargetBoatX - this.rowingBoatX) * 0.14;
+    const diffX = this.rowingBoatX - prevX;
+    this.rowingBoatRot = Math.max(-16, Math.min(16, diffX * 12));
+
+    if (this.dom.rowingBoat) {
+      this.dom.rowingBoat.style.left = `${this.rowingBoatX.toFixed(1)}%`;
+      this.dom.rowingBoat.style.top = `${this.rowingBoatY}%`;
+      this.dom.rowingBoat.style.setProperty('--boat-rot', `${this.rowingBoatRot.toFixed(1)}deg`);
+      this.dom.rowingBoat.style.transform = `translate(-50%, -50%) rotate(${this.rowingBoatRot.toFixed(1)}deg)`;
+    }
+
+    // 3. Update HUD & Gauges
+    const speedPercent = Math.min(100, Math.max(15, (this.rowingSpeed / 3.0) * 100));
+    if (this.dom.rowingSpeedBar) this.dom.rowingSpeedBar.style.width = `${speedPercent}%`;
+    if (this.dom.rowingSpeedText) {
+      if (this.rowingSpeed > 2.2) this.dom.rowingSpeedText.textContent = 'Power Rowing! ⚡';
+      else if (this.rowingSpeed > 1.3) this.dom.rowingSpeedText.textContent = 'Paddling Fast 🚣';
+      else this.dom.rowingSpeedText.textContent = 'Gentle Drift 🍃';
+    }
+    if (this.dom.rowingSpeedHudBadge) {
+      if (this.rowingSpeed > 2.2) this.dom.rowingSpeedHudBadge.textContent = '⚡ Speed: Fast';
+      else if (this.rowingSpeed > 1.3) this.dom.rowingSpeedHudBadge.textContent = '⚡ Speed: Cruising';
+      else this.dom.rowingSpeedHudBadge.textContent = '⚡ Speed: Drifting';
+    }
+
+    // 4. Spawn water ripples
+    if (now - this.rowingLastRippleTime > 380 / this.rowingSpeed) {
+      this.rowingLastRippleTime = now;
+      this.spawnRowingRipple();
+    }
+
+    // 5. Spawn river obstacles (Rocks) & Healthy Foods
+    const spawnDelay = Math.max(1200, 2200 / this.rowingSpeed);
+    if (now - this.rowingLastSpawnTime > spawnDelay) {
+      this.rowingLastSpawnTime = now;
+      this.spawnRowingEntity();
+    }
+
+    // 6. Update ripples
+    this.updateRowingRipples(dt);
+
+    // 7. Update entities (move down & check collisions)
+    this.updateRowingEntities(dt);
+  }
+
+  spawnRowingRipple() {
+    if (!this.dom.rowingRipplesContainer) return;
+    const rippleEl = document.createElement('div');
+    rippleEl.className = 'absolute rounded-full border border-white/50 bg-white/20 pointer-events-none transition-opacity duration-300';
+    const randX = 20 + Math.random() * 60;
+    const size = 20 + Math.random() * 25;
+    rippleEl.style.width = `${size}px`;
+    rippleEl.style.height = `${size * 0.45}px`;
+    rippleEl.style.left = `${randX}%`;
+    rippleEl.style.top = '-5%';
+    rippleEl.style.transform = 'translate(-50%, -50%)';
+    this.dom.rowingRipplesContainer.appendChild(rippleEl);
+
+    this.rowingRipples.push({
+      el: rippleEl,
+      y: -5,
+      speed: 1.0 + Math.random() * 0.3
+    });
+  }
+
+  updateRowingRipples(dt) {
+    for (let i = this.rowingRipples.length - 1; i >= 0; i--) {
+      const rip = this.rowingRipples[i];
+      rip.y += dt * 38 * this.rowingSpeed * rip.speed;
+      rip.el.style.top = `${rip.y}%`;
+
+      if (rip.y > 105) {
+        rip.el.remove();
+        this.rowingRipples.splice(i, 1);
+      }
+    }
+  }
+
+  spawnRowingEntity() {
+    if (!this.dom.rowingEntitiesContainer) return;
+
+    // Determine type: ensure adequate healthy foods spawn
+    // If fewer than 5 foods collected, bias towards foods
+    const isFood = Math.random() < 0.58;
+    const entityX = 22 + Math.random() * 56; // Within river width (22% to 78%)
+
+    const entityEl = document.createElement('div');
+    entityEl.style.left = `${entityX}%`;
+    entityEl.style.top = '-10%';
+    entityEl.style.transform = 'translate(-50%, -50%)';
+
+    let entityData = null;
+
+    if (isFood) {
+      // Pick a healthy food
+      const foods = [
+        { id: 1, name: 'Red Apple', emoji: '🍎', color: 'bg-rose-100 border-rose-300' },
+        { id: 2, name: 'Crunchy Carrot', emoji: '🥕', color: 'bg-amber-100 border-amber-300' },
+        { id: 3, name: 'Sweet Banana', emoji: '🍌', color: 'bg-yellow-100 border-yellow-300' },
+        { id: 4, name: 'Fresh Strawberry', emoji: '🍓', color: 'bg-red-100 border-red-300' },
+        { id: 5, name: 'Juicy Orange', emoji: '🍊', color: 'bg-orange-100 border-orange-300' }
+      ];
+      const pick = foods[this.rowingFoodsCollected % foods.length];
+      entityEl.className = 'absolute flex flex-col items-center justify-center pointer-events-none food-bobbing z-20';
+      entityEl.innerHTML = `
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full ${pick.color} border-2 flex items-center justify-center text-2xl sm:text-3xl shadow-[0_4px_10px_rgba(0,0,0,0.15)] filter drop-shadow">
+          ${pick.emoji}
+        </div>
+        <span class="mt-1 text-[9px] font-black text-slate-700 bg-white/90 px-1.5 py-0.5 rounded-full border border-stone-200 shadow-sm leading-tight">
+          ${pick.name}
+        </span>
+      `;
+
+      entityData = {
+        type: 'FOOD',
+        el: entityEl,
+        x: entityX,
+        y: -10,
+        speed: 1.0,
+        foodInfo: pick,
+        hit: false
+      };
+    } else {
+      // Soft gray circle rock to dodge
+      entityEl.className = 'absolute flex flex-col items-center justify-center pointer-events-none z-20 river-rock';
+      entityEl.innerHTML = `
+        <div class="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-400 border-3 border-slate-500 shadow-[0_4px_12px_rgba(0,0,0,0.25)] flex items-center justify-center overflow-hidden">
+          <div class="absolute inset-1 rounded-full bg-slate-300/60 blur-[1px]"></div>
+          <span class="relative text-2xl sm:text-3xl select-none">🪨</span>
+        </div>
+        <span class="mt-1 text-[9px] font-extrabold text-slate-700 bg-white/90 px-1.5 py-0.5 rounded-full border border-slate-200 shadow-sm leading-tight">
+          Rock (Dodge!)
+        </span>
+      `;
+
+      entityData = {
+        type: 'ROCK',
+        el: entityEl,
+        x: entityX,
+        y: -10,
+        speed: 1.0,
+        hit: false
+      };
+    }
+
+    this.dom.rowingEntitiesContainer.appendChild(entityEl);
+    this.rowingEntities.push(entityData);
+  }
+
+  updateRowingEntities(dt) {
+    const boatX = this.rowingBoatX;
+
+    for (let i = this.rowingEntities.length - 1; i >= 0; i--) {
+      const ent = this.rowingEntities[i];
+      ent.y += dt * 32 * this.rowingSpeed * ent.speed;
+      ent.el.style.top = `${ent.y.toFixed(1)}%`;
+
+      // Collision detection with boat (when entity reaches boat vertical range ~62% - 82%)
+      if (!ent.hit && ent.y >= 62 && ent.y <= 82) {
+        // Horizontal distance between entity X and boat X
+        const distX = Math.abs(ent.x - boatX);
+
+        if (distX < 12) {
+          ent.hit = true;
+
+          if (ent.type === 'ROCK') {
+            this.handleRockCollision(ent);
+          } else if (ent.type === 'FOOD') {
+            this.handleFoodCollection(ent);
+          }
+        }
+      }
+
+      // Remove off-screen entities
+      if (ent.y > 115) {
+        ent.el.remove();
+        this.rowingEntities.splice(i, 1);
+      }
+    }
+  }
+
+  handleRockCollision(rock) {
+    // Play soft 'bonk' sound
+    soundEngine.playBonk();
+
+    // Slow boat down
+    this.rowingSpeed = Math.max(0.4, this.rowingSpeed * 0.45);
+
+    // Visual bump shake on the boat
+    if (this.dom.rowingBoat) {
+      this.dom.rowingBoat.classList.remove('boat-bump-shake');
+      void this.dom.rowingBoat.offsetWidth;
+      this.dom.rowingBoat.classList.add('boat-bump-shake');
+    }
+
+    // Splash / floating text effect
+    this.spawnRowingSplash(rock.x, rock.y, '💥 Bonk! Slowed Down!', 'text-amber-700 bg-amber-100 border-amber-300');
+
+    this.dom.feedbackText.textContent = 'Oops! Bumped a soft rock! 🪨 Move your arms to row and speed up again!';
+    this.dom.statusText.textContent = 'River Voyage: Dodged a rock! Keep rowing and leaning!';
+  }
+
+  handleFoodCollection(food) {
+    // Play cheerful chime
+    soundEngine.playSnackChime();
+
+    this.rowingFoodsCollected++;
+    const count = this.rowingFoodsCollected;
+
+    // Remove element with pop animation
+    food.el.classList.add('scale-150', 'opacity-0', 'transition-all', 'duration-300');
+    setTimeout(() => food.el.remove(), 320);
+
+    // Spawn cheerful floating sparkle bubble
+    this.spawnRowingSplash(food.x, food.y, `+1 ${food.foodInfo.emoji} ${food.foodInfo.name}!`, 'text-emerald-800 bg-emerald-100 border-emerald-300 font-game');
+
+    // Update Left Card checklist slot
+    const slotId = `snack-slot-${Math.min(5, count)}`;
+    const slotEl = document.getElementById(slotId);
+    if (slotEl) {
+      slotEl.className = 'p-1.5 rounded-2xl bg-emerald-100 border-2 border-emerald-400 flex flex-col items-center justify-center transition-all scale-105 shadow-sm opacity-100';
+      slotEl.innerHTML = `
+        <span class="text-xl">${food.foodInfo.emoji}</span>
+        <span class="text-[9px] font-black text-emerald-900 mt-0.5">Got it! ✅</span>
+      `;
+    }
+
+    // Update Counts & Badges
+    if (this.dom.rowingSnacksCountText) this.dom.rowingSnacksCountText.textContent = `${count} of 5`;
+    if (this.dom.rowingMissionBadge) this.dom.rowingMissionBadge.textContent = `${count} / 5 Snacks`;
+    if (this.dom.rowingSnacksHudBadge) this.dom.rowingSnacksHudBadge.textContent = `${food.foodInfo.emoji} ${count} of 5 Snacks Collected`;
+
+    this.dom.statusText.textContent = `✨ Collected ${food.foodInfo.name}! (${count}/5 Snacks)`;
+    this.dom.feedbackText.textContent = count >= 5 ? 'All 5 healthy foods collected! Paw-some voyage!' : `Yummy ${food.foodInfo.name}! Lean to grab the next snack!`;
+
+    // Check Win Condition: Once child collects 5 healthy foods
+    if (count >= 5) {
+      this.triggerRowingWin();
+    }
+  }
+
+  spawnRowingSplash(x, y, text, styleClasses) {
+    if (!this.dom.rowingEffectsContainer) return;
+    const splash = document.createElement('div');
+    splash.className = `absolute px-3 py-1 rounded-full border shadow-lg text-xs font-black z-30 transition-all duration-700 pointer-events-none -translate-x-1/2 -translate-y-1/2 ${styleClasses}`;
+    splash.textContent = text;
+    splash.style.left = `${x}%`;
+    splash.style.top = `${y}%`;
+    this.dom.rowingEffectsContainer.appendChild(splash);
+
+    requestAnimationFrame(() => {
+      splash.style.top = `${y - 12}%`;
+      splash.style.opacity = '0';
+    });
+
+    setTimeout(() => splash.remove(), 750);
+  }
+
+  triggerRowingWin() {
+    if (this.rowingCompleted) return;
+    this.rowingCompleted = true;
+
+    // Stop the river
+    this.rowingSpeed = 0;
+
+    // Award 20 Energy Coins
+    this.awardCoins(20);
+
+    // Audio & Confetti
+    soundEngine.playVictoryChime();
+    this.launchConfetti();
+
+    // Puppy Voice Cheer: "Paw-some rowing! We got all the snacks!"
+    voiceEngine.speak("Paw-some rowing! We got all the snacks!", { pitch: 1.6, rate: 1.1 });
+
+    this.dom.statusText.textContent = '🚣 Paw-some rowing! We got all the snacks! (+20 Coins)';
+    this.dom.feedbackText.textContent = 'Mission Complete! All 5 healthy snacks safely aboard!';
+    this.dom.simulateBtn.innerHTML = '<span>🔄</span> Row River Again';
+
+    setTimeout(() => {
+      if (this.dom.rowingWinCard) {
+        this.dom.rowingWinCard.classList.remove('hidden');
+        this.startAutoReturnCountdown({
+          ringEl: this.dom.rowingCircularRing,
+          numberEl: this.dom.rowingAutoCountdown,
+          secTextEl: this.dom.rowingCircularSec,
+          seconds: 5
+        });
+      }
+    }, 1200);
+  }
+
+  simulateNextRowingStep() {
+    if (this.rowingCompleted) {
+      this.resetRowingBoat();
+      return;
+    }
+
+    // Accelerate speed & stroke oars
+    this.rowingSpeed = Math.min(3.0, this.rowingSpeed + 0.6);
+    this.triggerOarStroke();
+
+    // Find next uncollected food in river or spawn one
+    let targetFood = this.rowingEntities.find(e => e.type === 'FOOD' && !e.hit);
+
+    if (!targetFood) {
+      this.spawnRowingEntity();
+      targetFood = this.rowingEntities.find(e => e.type === 'FOOD' && !e.hit);
+    }
+
+    if (targetFood) {
+      // Steer boat smoothly towards target food
+      this.rowingTargetBoatX = targetFood.x;
+      this.rowingBoatX = targetFood.x;
+      if (this.dom.rowingBoat) this.dom.rowingBoat.style.left = `${this.rowingBoatX}%`;
+
+      // Trigger collection
+      targetFood.hit = true;
+      this.handleFoodCollection(targetFood);
+    }
+  }
+
+  /**
+   * ============================================================
+   * ACTIVITY: CATCH THE FALLING OBJECTS
+   * ============================================================
+   */
+  startFallingObjectsMode() {
+    soundEngine.init();
+    voiceEngine.initVoices();
+    soundEngine.playBgMusic();
+    this.isGameRunning = true;
+    this.currentPhase = PHASES.IDLE;
+
+    // Ensure webcam is active and visible
+    if (this.dom.webcamVideo) this.dom.webcamVideo.classList.remove('hidden');
+    if (this.dom.overlayCanvas) this.dom.overlayCanvas.classList.remove('hidden');
+    if (this.dom.cameraPlaceholder) this.dom.cameraPlaceholder.classList.add('hidden');
+
+    if (!this.tracker.isRunning && !this.isSimulating) {
+      this.startCamera().catch(e => console.warn('Falling objects camera startup warning:', e));
+    }
+
+    this.resetFallingObjects();
+
+    // Puppy Voice Intro:
+    voiceEngine.speak("Arf! Let's catch the healthy food! Move left and right to catch them in your basket!", { pitch: 1.6, rate: 1.1 });
+
+    this.dom.statusText.textContent = 'Catch Foods: Move left and right to catch healthy snacks in your basket!';
+    this.dom.feedbackText.textContent = 'Step left and right! Catch green apples & carrots, avoid sweet donuts!';
+
+    // Start falling loop
+    this.fallingLastFrameTime = performance.now();
+    this.startFallingLoop();
+  }
+
+  resetFallingObjects() {
+    this.clearAutoReturnTimer();
+    this.fallingBasketX = 50;
+    this.fallingTargetBasketX = 50;
+    this.fallingScore = 0;
+    this.fallingCompleted = false;
+    this.fallingLastSpawnTime = performance.now();
+
+    // Reset Win Card
+    if (this.dom.fallingWinCard) this.dom.fallingWinCard.classList.add('hidden');
+
+    // Clear falling objects & effects containers
+    if (this.dom.fallingObjectsContainer) this.dom.fallingObjectsContainer.innerHTML = '';
+    if (this.dom.fallingEffectsContainer) this.dom.fallingEffectsContainer.innerHTML = '';
+    this.fallingObjects = [];
+
+    // Reset basket position
+    if (this.dom.fallingBasket) {
+      this.dom.fallingBasket.style.left = '50%';
+    }
+    if (this.dom.fallingHeadTracker) {
+      this.dom.fallingHeadTracker.style.left = '50%';
+    }
+    if (this.dom.fallingPositionIndicator) {
+      this.dom.fallingPositionIndicator.style.left = '45%';
+    }
+    if (this.dom.fallingTrackingStatus) {
+      this.dom.fallingTrackingStatus.textContent = 'Tracking Active 📍';
+    }
+
+    // Reset Checklist slots (5 healthy foods)
+    const healthyFoods = [
+      { id: 1, name: 'Apple', emoji: '🍏' },
+      { id: 2, name: 'Carrot', emoji: '🥕' },
+      { id: 3, name: 'Banana', emoji: '🍌' },
+      { id: 4, name: 'Broccoli', emoji: '🥦' },
+      { id: 5, name: 'Berry', emoji: '🍓' },
+    ];
+    healthyFoods.forEach(f => {
+      const slot = document.getElementById(`falling-slot-${f.id}`);
+      if (slot) {
+        slot.className = 'p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50';
+        slot.innerHTML = `<span class="text-xl">${f.emoji}</span><span class="text-[9px] font-black text-slate-600 mt-0.5">${f.name}</span>`;
+      }
+    });
+
+    if (this.dom.fallingBasketCountText) this.dom.fallingBasketCountText.textContent = '0 of 5';
+    if (this.dom.fallingMissionBadge) this.dom.fallingMissionBadge.textContent = '0 / 5 Caught';
+    if (this.dom.fallingScoreHudBadge) this.dom.fallingScoreHudBadge.textContent = '🍏 0 of 5 Healthy Foods Caught';
+    if (this.dom.fallingOverlayCount) this.dom.fallingOverlayCount.textContent = '0';
+    if (this.dom.simulateBtn) this.dom.simulateBtn.innerHTML = '<span>🧺</span> Catch Healthy Food';
+  }
+
+  setupFallingControls() {
+    // Keyboard controls for desktop testing / fallback (Arrow keys & A/D)
+    window.addEventListener('keydown', (e) => {
+      if (this.gameMode !== GAME_MODES.FALLING_OBJECTS || this.fallingCompleted) return;
+
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        this.fallingTargetBasketX = Math.max(14, this.fallingTargetBasketX - 8);
+        this.updateFallingBasketUIPosition(this.fallingTargetBasketX);
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        this.fallingTargetBasketX = Math.min(86, this.fallingTargetBasketX + 8);
+        this.updateFallingBasketUIPosition(this.fallingTargetBasketX);
+      }
+    });
+
+    // Mouse / Touch steering controls on the falling overlay
+    if (this.dom.fallingGameOverlay) {
+      const handlePointer = (e) => {
+        if (this.gameMode !== GAME_MODES.FALLING_OBJECTS || this.fallingCompleted) return;
+        const rect = this.dom.fallingGameOverlay.getBoundingClientRect();
+        if (!rect.width) return;
+        const relX = ((e.clientX - rect.left) / rect.width) * 100;
+        this.fallingTargetBasketX = Math.max(14, Math.min(86, relX));
+        this.updateFallingBasketUIPosition(this.fallingTargetBasketX);
+      };
+
+      this.dom.fallingGameOverlay.addEventListener('pointerdown', handlePointer);
+      this.dom.fallingGameOverlay.addEventListener('pointermove', (e) => {
+        if (e.buttons > 0) handlePointer(e);
+      });
+    }
+  }
+
+  updateFallingBasketUIPosition(x) {
+    if (this.dom.fallingHeadTracker) {
+      this.dom.fallingHeadTracker.style.left = `${x.toFixed(1)}%`;
+    }
+    if (this.dom.fallingPositionIndicator) {
+      const clampedIndicator = Math.max(0, Math.min(85, x - 7));
+      this.dom.fallingPositionIndicator.style.left = `${clampedIndicator.toFixed(1)}%`;
+    }
+    if (this.dom.fallingTrackingStatus) {
+      if (x < 36) this.dom.fallingTrackingStatus.textContent = 'Left Side 🏃';
+      else if (x > 64) this.dom.fallingTrackingStatus.textContent = 'Right Side 🏃';
+      else this.dom.fallingTrackingStatus.textContent = 'Centered 📍';
+    }
+  }
+
+  updateFallingPose(landmarks) {
+    if (this.fallingCompleted || !landmarks) return;
+
+    // Track the nose landmark (0) or midpoint of shoulders (11, 12)
+    const nose = landmarks[LANDMARKS.NOSE];
+    const ls = landmarks[LANDMARKS.LEFT_SHOULDER];
+    const rs = landmarks[LANDMARKS.RIGHT_SHOULDER];
+
+    let targetX = null;
+
+    if (nose && nose.visibility > 0.45) {
+      // Camera is horizontally mirrored with CSS scaleX(-1)
+      targetX = (1.0 - nose.x) * 100;
+    } else if (ls && rs && ls.visibility > 0.35 && rs.visibility > 0.35) {
+      const midX = (ls.x + rs.x) / 2;
+      targetX = (1.0 - midX) * 100;
+    }
+
+    if (targetX !== null) {
+      // Clamp between 14% and 86% so virtual basket stays nicely on screen
+      this.fallingTargetBasketX = Math.max(14, Math.min(86, targetX));
+      this.updateFallingBasketUIPosition(this.fallingTargetBasketX);
+    }
+  }
+
+  startFallingLoop() {
+    if (this.fallingAnimLoopId) cancelAnimationFrame(this.fallingAnimLoopId);
+
+    const tick = (now) => {
+      if (this.gameMode !== GAME_MODES.FALLING_OBJECTS) return;
+
+      const dt = Math.min((now - this.fallingLastFrameTime) / 1000, 0.1);
+      this.fallingLastFrameTime = now;
+
+      if (!this.fallingCompleted) {
+        this.updateFallingPhysics(dt, now);
+      }
+
+      this.fallingAnimLoopId = requestAnimationFrame(tick);
+    };
+
+    this.fallingAnimLoopId = requestAnimationFrame(tick);
+  }
+
+  updateFallingPhysics(dt, now) {
+    // 1. Smooth horizontal AR basket interpolation
+    this.fallingBasketX += (this.fallingTargetBasketX - this.fallingBasketX) * 0.22;
+
+    if (this.dom.fallingBasket) {
+      this.dom.fallingBasket.style.left = `${this.fallingBasketX.toFixed(1)}%`;
+    }
+
+    // 2. Spawn falling objects periodically (every ~1.6 - 2.0s)
+    if (now - this.fallingLastSpawnTime > 1750) {
+      this.fallingLastSpawnTime = now;
+      this.spawnFallingObject();
+    }
+
+    // 3. Move falling objects down & test collisions
+    this.updateFallingObjects(dt);
+  }
+
+  spawnFallingObject() {
+    if (!this.dom.fallingObjectsContainer || this.fallingCompleted) return;
+
+    // Mix 'Healthy Foods' (60%) and 'Junk Foods' (40%)
+    const isHealthy = Math.random() < 0.60;
+    const objX = 16 + Math.random() * 68; // 16% to 84% width
+
+    const objEl = document.createElement('div');
+    objEl.style.left = `${objX}%`;
+    objEl.style.top = '-10%';
+    objEl.style.transform = 'translate(-50%, -50%)';
+
+    let itemInfo = null;
+
+    if (isHealthy) {
+      const healthyList = [
+        { name: 'Green Apple', emoji: '🍏', type: 'HEALTHY', color: 'bg-emerald-100 border-emerald-300' },
+        { name: 'Orange Carrot', emoji: '🥕', type: 'HEALTHY', color: 'bg-amber-100 border-amber-300' },
+        { name: 'Sweet Banana', emoji: '🍌', type: 'HEALTHY', color: 'bg-yellow-100 border-yellow-300' },
+        { name: 'Fresh Broccoli', emoji: '🥦', type: 'HEALTHY', color: 'bg-green-100 border-green-300' },
+        { name: 'Sweet Berry', emoji: '🍓', type: 'HEALTHY', color: 'bg-rose-100 border-rose-300' },
+      ];
+      // Alternate through healthy foods based on current score
+      itemInfo = healthyList[this.fallingScore % healthyList.length];
+
+      objEl.className = 'absolute flex flex-col items-center justify-center pointer-events-none z-10 transition-transform duration-75';
+      objEl.innerHTML = `
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full ${itemInfo.color} border-2 flex items-center justify-center text-2xl sm:text-3xl shadow-md falling-wobble">
+          ${itemInfo.emoji}
+        </div>
+        <span class="mt-1 text-[9px] font-black text-emerald-800 bg-white/95 px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm leading-tight">
+          ${itemInfo.name}
+        </span>
+      `;
+    } else {
+      const junkList = [
+        { name: 'Pink Donut', emoji: '🍩', type: 'JUNK', color: 'bg-pink-100 border-pink-300' },
+        { name: 'Sweet Lollipop', emoji: '🍭', type: 'JUNK', color: 'bg-purple-100 border-purple-300' },
+        { name: 'Sugar Cupcake', emoji: '🧁', type: 'JUNK', color: 'bg-fuchsia-100 border-fuchsia-300' },
+        { name: 'Crispy Fries', emoji: '🍟', type: 'JUNK', color: 'bg-amber-100 border-amber-300' },
+      ];
+      itemInfo = junkList[Math.floor(Math.random() * junkList.length)];
+
+      objEl.className = 'absolute flex flex-col items-center justify-center pointer-events-none z-10 transition-transform duration-75';
+      objEl.innerHTML = `
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full ${itemInfo.color} border-2 flex items-center justify-center text-2xl sm:text-3xl shadow-md falling-wobble">
+          ${itemInfo.emoji}
+        </div>
+        <span class="mt-1 text-[9px] font-black text-rose-800 bg-white/95 px-2 py-0.5 rounded-full border border-rose-200 shadow-sm leading-tight">
+          ${itemInfo.name} (Dodge!)
+        </span>
+      `;
+    }
+
+    const objData = {
+      el: objEl,
+      info: itemInfo,
+      x: objX,
+      y: -10,
+      speed: 21 + Math.random() * 6, // 21% - 27% per second
+      caught: false,
+    };
+
+    this.dom.fallingObjectsContainer.appendChild(objEl);
+    this.fallingObjects.push(objData);
+  }
+
+  updateFallingObjects(dt) {
+    const basketX = this.fallingBasketX;
+
+    for (let i = this.fallingObjects.length - 1; i >= 0; i--) {
+      const obj = this.fallingObjects[i];
+      obj.y += dt * obj.speed;
+      obj.el.style.top = `${obj.y.toFixed(1)}%`;
+
+      // Check collision with the AR basket near bottom (~72% - 88% range)
+      if (!obj.caught && obj.y >= 72 && obj.y <= 88) {
+        const distX = Math.abs(obj.x - basketX);
+
+        // Basket collision radius (~11.5% screen width)
+        if (distX < 11.5) {
+          obj.caught = true;
+          this.handleFallingObjectCatch(obj);
+        }
+      }
+
+      // Remove items fallen past the bottom of the screen
+      if (obj.y > 110) {
+        obj.el.remove();
+        this.fallingObjects.splice(i, 1);
+      }
+    }
+  }
+
+  handleFallingObjectCatch(obj) {
+    if (obj.info.type === 'HEALTHY') {
+      // 1. Play happy 'pop' sound
+      soundEngine.playSoftPop();
+
+      // 2. Animate basket with catch pop
+      if (this.dom.fallingBasketInner) {
+        this.dom.fallingBasketInner.classList.remove('basket-catch-pop', 'basket-oops-shake');
+        void this.dom.fallingBasketInner.offsetWidth;
+        this.dom.fallingBasketInner.classList.add('basket-catch-pop');
+      }
+
+      // 3. Increment score
+      this.fallingScore++;
+      const count = this.fallingScore;
+
+      // 4. Pop and remove food element
+      obj.el.classList.add('scale-150', 'opacity-0', 'transition-all', 'duration-300');
+      setTimeout(() => obj.el.remove(), 320);
+
+      // 5. Floating sparkle text popup
+      this.spawnFallingSplash(obj.x, obj.y, `+1 Pop! ${obj.info.emoji} ${obj.info.name}!`, 'text-emerald-900 bg-emerald-100 border-emerald-300 font-game');
+
+      // 6. Update Left Card Checklist slot
+      const slotId = `falling-slot-${Math.min(5, count)}`;
+      const slotEl = document.getElementById(slotId);
+      if (slotEl) {
+        slotEl.className = 'p-1.5 rounded-2xl bg-emerald-100 border-2 border-emerald-400 flex flex-col items-center justify-center transition-all scale-105 shadow-sm opacity-100';
+        slotEl.innerHTML = `
+          <span class="text-xl">${obj.info.emoji}</span>
+          <span class="text-[9px] font-black text-emerald-900 mt-0.5">Caught! ✅</span>
+        `;
+      }
+
+      // 7. Update HUD & Overlay counters
+      if (this.dom.fallingOverlayCount) this.dom.fallingOverlayCount.textContent = `${count}`;
+      if (this.dom.fallingBasketCountText) this.dom.fallingBasketCountText.textContent = `${count} of 5`;
+      if (this.dom.fallingMissionBadge) this.dom.fallingMissionBadge.textContent = `${count} / 5 Caught`;
+      if (this.dom.fallingScoreHudBadge) this.dom.fallingScoreHudBadge.textContent = `🍏 ${count} of 5 Healthy Foods Caught`;
+
+      this.dom.statusText.textContent = `✨ Caught ${obj.info.name}! (${count}/5 Foods)`;
+      this.dom.feedbackText.textContent = count >= 5 ? 'Paw-some! All 5 healthy foods caught!' : `Yummy ${obj.info.name}! Keep moving to catch the next one!`;
+
+      // 8. Check Win Condition: Once child catches 5 healthy foods
+      if (count >= 5) {
+        this.triggerFallingWin();
+      }
+    } else {
+      // Caught Junk Food:
+      // 1. Play soft 'oops' buzzer
+      soundEngine.playSoftOopsBuzzer();
+
+      // 2. Shake basket with oops wobble
+      if (this.dom.fallingBasketInner) {
+        this.dom.fallingBasketInner.classList.remove('basket-catch-pop', 'basket-oops-shake');
+        void this.dom.fallingBasketInner.offsetWidth;
+        this.dom.fallingBasketInner.classList.add('basket-oops-shake');
+      }
+
+      // 3. Remove junk food element
+      obj.el.classList.add('scale-75', 'opacity-0', 'transition-all', 'duration-300');
+      setTimeout(() => obj.el.remove(), 320);
+
+      // 4. Floating oops message
+      this.spawnFallingSplash(obj.x, obj.y, `Oops! ${obj.info.emoji} Skip Junk Food!`, 'text-rose-900 bg-rose-100 border-rose-300 font-game');
+
+      this.dom.statusText.textContent = 'Oops! Caught junk food - dodge it next time!';
+      this.dom.feedbackText.textContent = 'Oops! Leave the sweet donuts behind! Catch green apples and carrots!';
+    }
+  }
+
+  spawnFallingSplash(x, y, text, styleClasses) {
+    if (!this.dom.fallingEffectsContainer) return;
+    const splash = document.createElement('div');
+    splash.className = `absolute px-3 py-1 rounded-full border shadow-lg text-xs font-black z-30 transition-all duration-700 pointer-events-none -translate-x-1/2 -translate-y-1/2 ${styleClasses}`;
+    splash.textContent = text;
+    splash.style.left = `${x}%`;
+    splash.style.top = `${y}%`;
+    this.dom.fallingEffectsContainer.appendChild(splash);
+
+    requestAnimationFrame(() => {
+      splash.style.top = `${y - 14}%`;
+      splash.style.opacity = '0';
+    });
+
+    setTimeout(() => splash.remove(), 750);
+  }
+
+  triggerFallingWin() {
+    if (this.fallingCompleted) return;
+    this.fallingCompleted = true;
+
+    // Stop falling objects
+    for (const obj of this.fallingObjects) {
+      obj.el.remove();
+    }
+    this.fallingObjects = [];
+
+    // Award 20 Energy Coins
+    this.awardCoins(20);
+
+    // Audio & Confetti
+    soundEngine.playVictoryChime();
+    this.launchConfetti();
+
+    // Puppy Voice Cheer: "Paw-some catching! You are so fast!"
+    voiceEngine.speak("Paw-some catching! You are so fast!", { pitch: 1.6, rate: 1.1 });
+
+    this.dom.statusText.textContent = '🧺 Paw-some catching! You are so fast! (+20 Coins)';
+    this.dom.feedbackText.textContent = 'Basket full of healthy foods! Paw-some speed!';
+    if (this.dom.simulateBtn) this.dom.simulateBtn.innerHTML = '<span>🔄</span> Catch Again';
+
+    setTimeout(() => {
+      if (this.dom.fallingWinCard) {
+        this.dom.fallingWinCard.classList.remove('hidden');
+        this.startAutoReturnCountdown({
+          ringEl: this.dom.fallingCircularRing,
+          numberEl: this.dom.fallingAutoCountdown,
+          secTextEl: this.dom.fallingCircularSec,
+          seconds: 5
+        });
+      }
+    }, 1200);
+  }
+
+  simulateNextFallingStep() {
+    if (this.fallingCompleted) {
+      this.resetFallingObjects();
+      return;
+    }
+
+    // Find nearest healthy food or spawn one directly above basket
+    let targetFood = this.fallingObjects.find(o => o.info.type === 'HEALTHY' && !o.caught);
+
+    if (!targetFood) {
+      this.spawnFallingObject();
+      targetFood = this.fallingObjects.find(o => o.info.type === 'HEALTHY' && !o.caught);
+    }
+
+    if (targetFood) {
+      // Smoothly move basket underneath target food
+      this.fallingTargetBasketX = targetFood.x;
+      this.fallingBasketX = targetFood.x;
+      this.updateFallingBasketUIPosition(targetFood.x);
+      if (this.dom.fallingBasket) {
+        this.dom.fallingBasket.style.left = `${this.fallingBasketX}%`;
+      }
+
+      // Catch food
+      targetFood.caught = true;
+      targetFood.y = 78;
+      this.handleFallingObjectCatch(targetFood);
     }
   }
 
@@ -2671,7 +4423,28 @@ class FreezeDanceGame {
   /**
    * MediaPipe Pose landmark reception
    */
-  onPoseLandmarks(landmarks) {
+  onPoseLandmarks(landmarks, results) {
+    // Zero-Touch Global Air-Cursor update
+    this.updateAirCursor(landmarks, results);
+
+    if (this.isAnyMenuOpen() || this.isWinModalOpen()) {
+      return;
+    }
+
+    if (this.dom.airCursor && (this.gameMode === GAME_MODES.GESTURE_BUILDER || this.gameMode === GAME_MODES.ROWING_BOAT || this.gameMode === GAME_MODES.FALLING_OBJECTS)) {
+      // Allow specialized game cursors and HUDs during gameplay
+    }
+
+    if (this.gameMode === GAME_MODES.ROWING_BOAT) {
+      this.updateRowingPose(landmarks);
+      return;
+    }
+
+    if (this.gameMode === GAME_MODES.FALLING_OBJECTS) {
+      this.updateFallingPose(landmarks);
+      return;
+    }
+
     if (this.gameMode === GAME_MODES.GESTURE_BUILDER) {
       this.checkBuilderGesture(landmarks);
       return;
@@ -2804,31 +4577,20 @@ class FreezeDanceGame {
 
     voiceEngine.speak("Paw-some job! Wow, you did it!", { pitch: 1.6, rate: 1.1 });
 
-    let restartSeconds = 3;
-    this.dom.autoRestartCountdown.textContent = `${restartSeconds}`;
-
-    if (this.autoRestartTimer) clearInterval(this.autoRestartTimer);
-    this.autoRestartTimer = setInterval(() => {
-      restartSeconds--;
-      if (restartSeconds > 0) {
-        this.dom.autoRestartCountdown.textContent = `${restartSeconds}`;
-      } else {
-        clearInterval(this.autoRestartTimer);
-        this.autoRestartTimer = null;
-        this.closeCelebration();
-        
-        if (this.gameMode === GAME_MODES.FREEZE_DANCE) {
-          this.nextPose();
-          this.startActionPhase();
-        } else {
-          this.nextPose();
-          this.startYogaPose();
-        }
-      }
-    }, 1000);
+    // 5-Second visual countdown with animated circular timer returning automatically to Main Menu
+    setTimeout(() => {
+      this.startAutoReturnCountdown({
+        ringEl: this.dom.celebrationCircularRing,
+        numberEl: this.dom.autoRestartCountdown,
+        secTextEl: this.dom.celebrationCircularSec,
+        seconds: 5,
+        onComplete: () => this.closeCelebration()
+      });
+    }, 1200);
   }
 
   closeCelebration() {
+    this.clearAutoReturnTimer();
     if (this.autoRestartTimer) {
       clearInterval(this.autoRestartTimer);
       this.autoRestartTimer = null;
@@ -2974,6 +4736,16 @@ class FreezeDanceGame {
 
       // Advance to next word
       this.nextPotWord();
+      return;
+    }
+
+    if (this.gameMode === GAME_MODES.ROWING_BOAT) {
+      this.simulateNextRowingStep();
+      return;
+    }
+
+    if (this.gameMode === GAME_MODES.FALLING_OBJECTS) {
+      this.simulateNextFallingStep();
       return;
     }
 

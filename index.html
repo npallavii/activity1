@@ -53,6 +53,29 @@
 </head>
 <body class="relative min-h-screen flex flex-col justify-between selection:bg-emerald-100 selection:text-emerald-900 bg-stone-50 text-slate-700">
 
+  <!-- GLOBAL AIR-CURSOR & HOVER-TO-CLICK ENGINE (Zero-Touch Architecture) -->
+  <div id="air-cursor" class="fixed z-[9999] pointer-events-none transition-transform duration-75 -translate-x-1/2 -translate-y-1/2 hidden flex flex-col items-center justify-center select-none" style="left: -200px; top: -200px;">
+    <!-- Soft pastel glowing aura -->
+    <div class="absolute -inset-3 rounded-full bg-emerald-300/35 blur-md pointer-events-none cursor-pulse"></div>
+    <!-- Soft Pastel Circle Container with SVG Circular Progress Ring -->
+    <div class="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center">
+      <svg class="w-full h-full -rotate-90 pointer-events-none filter drop-shadow-sm" viewBox="0 0 100 100">
+        <!-- Background track (soft pastel ring) -->
+        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255, 255, 255, 0.85)" stroke-width="8" />
+        <!-- Dynamic Progress Ring (1.5s fill: 0% to 100%) -->
+        <circle id="air-cursor-progress-ring" cx="50" cy="50" r="42" fill="none" stroke="#34d399" stroke-width="8" stroke-linecap="round" stroke-dasharray="263.89" stroke-dashoffset="263.89" class="transition-all duration-75" />
+      </svg>
+      <!-- Soft Pastel Center Circle with Paw Icon -->
+      <div class="absolute inset-2.5 rounded-full bg-white/95 border-2 border-emerald-200/90 shadow-md flex items-center justify-center text-2xl sm:text-3xl select-none filter">
+        <span class="transform transition-transform duration-150">🐾</span>
+      </div>
+    </div>
+    <!-- 1.5s Dwell Timer Badge -->
+    <div id="air-cursor-badge" class="mt-1 px-2.5 py-0.5 rounded-full bg-emerald-950/85 text-emerald-200 font-black font-game text-[10px] sm:text-[11px] tracking-wider shadow-lg border border-emerald-400/80 backdrop-blur-sm">
+      1.5s
+    </div>
+  </div>
+
   <!-- Floating Forest Fireflies -->
   <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
     <div class="firefly" style="top: 15%; left: 12%; animation-delay: 0s;"></div>
@@ -128,15 +151,22 @@
       <h2 class="text-3xl sm:text-4xl font-black font-game text-slate-800 mb-1">
         Choose Your Adventure!
       </h2>
-      <p class="text-xs sm:text-sm text-slate-600 mb-6 font-medium">
+      <p class="text-xs sm:text-sm text-slate-600 mb-3 font-medium">
         Pick a fun active game to play with camera tracking!
       </p>
 
-      <!-- 6 Colorful Activity Buttons -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5">
+      <!-- Zero-Touch 4-Year-Old Accessibility Banner -->
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl bg-emerald-100/90 border border-emerald-300 text-emerald-950 font-black font-game text-xs sm:text-sm shadow-sm mb-4">
+        <span class="text-lg animate-bounce">✋</span>
+        <span>Hover your hand over any game for 2 seconds to play!</span>
+        <span class="text-base">🐾</span>
+      </div>
+
+      <!-- 8 Colorful Activity Buttons -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-3.5">
         
         <!-- 1. Freeze Dance Button -->
-        <button id="btn-mode-freeze" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-emerald-50 hover:bg-emerald-100/90 border-2 border-emerald-200/90 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
+        <button id="btn-mode-freeze" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-emerald-50 hover:bg-emerald-100/90 border-2 border-emerald-200/90 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer relative overflow-hidden">
           <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
             🦘
           </div>
@@ -145,10 +175,13 @@
           <span class="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
             Freeze & Pose
           </span>
+          <div class="w-full h-1.5 mt-2 rounded-full bg-stone-200/80 overflow-hidden pointer-events-none">
+            <div class="menu-hover-progress h-full w-0 rounded-full bg-emerald-500"></div>
+          </div>
         </button>
 
         <!-- 2. Fruit Yoga Button -->
-        <button id="btn-mode-fruit" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-rose-50 hover:bg-rose-100/90 border-2 border-rose-200/90 hover:border-rose-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
+        <button id="btn-mode-fruit" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-rose-50 hover:bg-rose-100/90 border-2 border-rose-200/90 hover:border-rose-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer relative overflow-hidden">
           <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-rose-100 text-rose-800 border border-rose-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
             🍎
           </div>
@@ -157,10 +190,13 @@
           <span class="px-2.5 py-1 rounded-full bg-rose-500 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
             Fruit Yoga
           </span>
+          <div class="w-full h-1.5 mt-2 rounded-full bg-stone-200/80 overflow-hidden pointer-events-none">
+            <div class="menu-hover-progress h-full w-0 rounded-full bg-rose-500"></div>
+          </div>
         </button>
 
         <!-- 3. Vegetable Yoga Button -->
-        <button id="btn-mode-veg" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-amber-50 hover:bg-amber-100/90 border-2 border-amber-200/90 hover:border-amber-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
+        <button id="btn-mode-veg" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-amber-50 hover:bg-amber-100/90 border-2 border-amber-200/90 hover:border-amber-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer relative overflow-hidden">
           <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-100 text-amber-800 border border-amber-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
             🥕
           </div>
@@ -169,10 +205,13 @@
           <span class="px-2.5 py-1 rounded-full bg-amber-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
             Veggie Yoga
           </span>
+          <div class="w-full h-1.5 mt-2 rounded-full bg-stone-200/80 overflow-hidden pointer-events-none">
+            <div class="menu-hover-progress h-full w-0 rounded-full bg-amber-500"></div>
+          </div>
         </button>
 
         <!-- 4. Shoot the Pots Button -->
-        <button id="btn-mode-pots" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-orange-50 hover:bg-orange-100/90 border-2 border-orange-200/90 hover:border-orange-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
+        <button id="btn-mode-pots" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-orange-50 hover:bg-orange-100/90 border-2 border-orange-200/90 hover:border-orange-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer relative overflow-hidden">
           <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-orange-100 text-orange-800 border border-orange-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
             🏺
           </div>
@@ -181,10 +220,13 @@
           <span class="px-2.5 py-1 rounded-full bg-orange-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
             Shoot the Pots
           </span>
+          <div class="w-full h-1.5 mt-2 rounded-full bg-stone-200/80 overflow-hidden pointer-events-none">
+            <div class="menu-hover-progress h-full w-0 rounded-full bg-orange-500"></div>
+          </div>
         </button>
 
         <!-- 5. Show & Tell Art Button -->
-        <button id="btn-mode-art" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-blue-50 hover:bg-blue-100/90 border-2 border-blue-200/90 hover:border-blue-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
+        <button id="btn-mode-art" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-blue-50 hover:bg-blue-100/90 border-2 border-blue-200/90 hover:border-blue-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer relative overflow-hidden">
           <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-100 text-blue-800 border border-blue-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
             🎨
           </div>
@@ -193,10 +235,13 @@
           <span class="px-2.5 py-1 rounded-full bg-blue-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
             Start Art Studio
           </span>
+          <div class="w-full h-1.5 mt-2 rounded-full bg-stone-200/80 overflow-hidden pointer-events-none">
+            <div class="menu-hover-progress h-full w-0 rounded-full bg-blue-500"></div>
+          </div>
         </button>
 
         <!-- 6. Gesture Builder Button (Activity 6) -->
-        <button id="btn-mode-builder" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-indigo-50 hover:bg-indigo-100/90 border-2 border-indigo-200/90 hover:border-indigo-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
+        <button id="btn-mode-builder" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-indigo-50 hover:bg-indigo-100/90 border-2 border-indigo-200/90 hover:border-indigo-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer relative overflow-hidden">
           <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
             🏠
           </div>
@@ -205,6 +250,39 @@
           <span class="px-2.5 py-1 rounded-full bg-indigo-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
             Play Gesture Builder
           </span>
+          <div class="w-full h-1.5 mt-2 rounded-full bg-stone-200/80 overflow-hidden pointer-events-none">
+            <div class="menu-hover-progress h-full w-0 rounded-full bg-indigo-500"></div>
+          </div>
+        </button>
+
+        <!-- 7. The Magic Rowing Boat Button (Activity 4) -->
+        <button id="btn-mode-rowing" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-cyan-50 hover:bg-cyan-100/90 border-2 border-cyan-200/90 hover:border-cyan-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer relative overflow-hidden">
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-cyan-100 text-cyan-800 border border-cyan-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
+            🚣
+          </div>
+          <h3 class="text-lg sm:text-xl font-black font-game text-cyan-950 mb-1">Rowing Boat</h3>
+          <p class="text-[11px] sm:text-xs text-slate-600 font-medium mb-3 leading-snug">Sit on floor! Row arms & lean body to steer down river!</p>
+          <span class="px-2.5 py-1 rounded-full bg-cyan-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
+            Play Rowing Boat
+          </span>
+          <div class="w-full h-1.5 mt-2 rounded-full bg-stone-200/80 overflow-hidden pointer-events-none">
+            <div class="menu-hover-progress h-full w-0 rounded-full bg-cyan-500"></div>
+          </div>
+        </button>
+
+        <!-- 8. Catch the Falling Objects Button -->
+        <button id="btn-mode-falling" class="group flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl bg-amber-50 hover:bg-amber-100/90 border-2 border-amber-200/90 hover:border-amber-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer relative overflow-hidden">
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-100 text-amber-900 border border-amber-200 flex items-center justify-center text-3xl sm:text-4xl mb-3 group-hover:animate-bounce">
+            🧺
+          </div>
+          <h3 class="text-lg sm:text-xl font-black font-game text-amber-950 mb-1">Catch Food</h3>
+          <p class="text-[11px] sm:text-xs text-slate-600 font-medium mb-3 leading-snug">Move left & right to catch healthy foods in your basket!</p>
+          <span class="px-2.5 py-1 rounded-full bg-amber-600 text-white text-[10px] sm:text-[11px] font-black tracking-wide uppercase">
+            Play Catch Food
+          </span>
+          <div class="w-full h-1.5 mt-2 rounded-full bg-stone-200/80 overflow-hidden pointer-events-none">
+            <div class="menu-hover-progress h-full w-0 rounded-full bg-amber-500"></div>
+          </div>
         </button>
 
       </div>
@@ -221,18 +299,25 @@
         🏺 Shoot the Pots
       </div>
 
-      <h2 class="text-2xl sm:text-3xl font-black font-game text-slate-800 mb-2">
+      <h2 class="text-2xl sm:text-3xl font-black font-game text-slate-800 mb-1">
         Select Age Challenge
       </h2>
-      <p class="text-xs sm:text-sm text-slate-600 mb-6 font-medium">
+      <p class="text-xs sm:text-sm text-slate-600 mb-3 font-medium">
         Choose the best spelling adventure for your age group!
       </p>
+
+      <!-- Zero-Touch 4-Year-Old Accessibility Banner -->
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl bg-orange-100/90 border border-orange-300 text-orange-950 font-black font-game text-xs sm:text-sm shadow-sm mb-4">
+        <span class="text-lg animate-bounce">✋</span>
+        <span>Hover your hand over your age for 2 seconds to start!</span>
+        <span class="text-base">🐾</span>
+      </div>
 
       <!-- 2 Soft-Colored Age Buttons -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         
         <!-- Age 4-5 Button (Sage Green / Auto-Spell) -->
-        <button id="btn-age-4-5" class="group flex flex-col items-center justify-between p-5 rounded-3xl bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
+        <button id="btn-age-4-5" class="group flex flex-col items-center justify-between p-5 rounded-3xl bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer relative overflow-hidden">
           <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-3xl mb-3 group-hover:animate-bounce">
             🌱
           </div>
@@ -243,10 +328,13 @@
           <p class="text-xs text-slate-600 font-medium leading-relaxed">
             Swipe hands to break pots! Letters fly together and sound out automatically!
           </p>
+          <div class="w-full h-1.5 mt-3 rounded-full bg-stone-200/80 overflow-hidden pointer-events-none">
+            <div class="menu-hover-progress h-full w-0 rounded-full bg-emerald-500"></div>
+          </div>
         </button>
 
         <!-- Age 6-8 Button (Warm Peach / Full-Body Spelling) -->
-        <button id="btn-age-6-8" class="group flex flex-col items-center justify-between p-5 rounded-3xl bg-orange-50 hover:bg-orange-100 border-2 border-orange-200 hover:border-orange-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer">
+        <button id="btn-age-6-8" class="group flex flex-col items-center justify-between p-5 rounded-3xl bg-orange-50 hover:bg-orange-100 border-2 border-orange-200 hover:border-orange-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer relative overflow-hidden">
           <div class="w-14 h-14 rounded-2xl bg-orange-100 text-orange-900 flex items-center justify-center text-3xl mb-3 group-hover:animate-bounce">
             🏹
           </div>
@@ -257,6 +345,9 @@
           <p class="text-xs text-slate-600 font-medium leading-relaxed">
             Break pots to scatter letters! Use your hands to grab and drag letters into the drop zone!
           </p>
+          <div class="w-full h-1.5 mt-3 rounded-full bg-stone-200/80 overflow-hidden pointer-events-none">
+            <div class="menu-hover-progress h-full w-0 rounded-full bg-orange-500"></div>
+          </div>
         </button>
 
       </div>
@@ -426,6 +517,51 @@
       </div>
       <div class="flex items-center gap-2">
         <span class="px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-black uppercase tracking-wider">
+          🪙 +20 Coins Reward
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAGIC ROWING BOAT QUEST HUD (Shown in Rowing Boat mode) -->
+  <div id="rowing-quest-hud" class="hidden relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 pt-3">
+    <div class="flex items-center justify-between p-3 rounded-2xl bg-white/85 border border-cyan-200 shadow-sm backdrop-blur-md">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl animate-bounce">🚣</span>
+        <div>
+          <div class="text-sm font-black font-game text-cyan-950 flex items-center gap-2">
+            <span>The Magic Rowing Boat</span>
+            <span id="rowing-snacks-hud-badge" class="px-2.5 py-0.5 rounded-full bg-cyan-100 border border-cyan-200 text-[11px] text-cyan-800 font-extrabold">🍎 0 of 5 Snacks Collected</span>
+          </div>
+          <p id="rowing-hud-subtitle" class="text-xs text-slate-600 font-medium">Row your arms to speed forward! Lean your torso left & right to steer away from rocks and collect healthy foods!</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="rowing-speed-hud-badge" class="hidden sm:inline-block px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-[11px] font-black uppercase tracking-wider">
+          ⚡ Speed: Drifting
+        </span>
+        <span class="px-3 py-1 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-black uppercase tracking-wider">
+          🪙 +20 Coins Reward
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATCH THE FALLING OBJECTS QUEST HUD -->
+  <div id="falling-quest-hud" class="hidden relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 pt-3">
+    <div class="flex items-center justify-between p-3 rounded-2xl bg-white/85 border border-amber-200 shadow-sm backdrop-blur-md">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl animate-bounce">🧺</span>
+        <div>
+          <div class="text-sm font-black font-game text-amber-950 flex items-center gap-2">
+            <span>Catch the Falling Objects</span>
+            <span id="falling-score-hud-badge" class="px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-[11px] text-amber-900 font-extrabold">🍏 0 of 5 Healthy Foods Caught</span>
+          </div>
+          <p id="falling-hud-subtitle" class="text-xs text-slate-600 font-medium">Move left and right! Catch healthy green apples & carrots in your basket, and dodge junk food donuts!</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-black uppercase tracking-wider">
           🪙 +20 Coins Reward
         </span>
       </div>
@@ -727,6 +863,216 @@
           <div class="mt-3 pt-3 border-t border-stone-200">
             <button id="btn-builder-reset" class="w-full py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs border border-stone-200 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
               <span>🔄</span> Restart House Blueprint
+            </button>
+          </div>
+        </div>
+
+        <!-- MAGIC ROWING BOAT MODE VIEW (Activity 4 Left Card) -->
+        <div id="rowing-mode-view" class="hidden flex flex-col justify-between h-full">
+          <div>
+            <!-- Header of Rowing Card -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs uppercase font-extrabold tracking-widest text-cyan-800 bg-cyan-50 border border-cyan-200 px-3 py-1 rounded-full">
+                River Voyage 🚣
+              </span>
+              <span id="rowing-mission-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-cyan-100 text-cyan-900 border border-cyan-200">
+                0 / 5 Snacks
+              </span>
+            </div>
+
+            <!-- Title & Emoji -->
+            <div class="flex items-center gap-3 mb-1">
+              <span class="text-3xl sm:text-4xl animate-bounce">🛶</span>
+              <h2 class="text-2xl sm:text-3xl font-black font-game text-slate-800">
+                Magic Rowing Boat
+              </h2>
+            </div>
+
+            <!-- Instructions -->
+            <p class="text-xs sm:text-sm text-slate-600 font-medium mb-3 leading-snug">
+              Sit on the floor! Move your wrists in rowing motions to paddle forward, and lean your torso left & right to steer away from rocks and collect 5 healthy snacks!
+            </p>
+
+            <!-- Real-Time Pose Steering & Speed Gauges -->
+            <div class="p-3.5 rounded-3xl bg-cyan-50/70 border border-cyan-200 shadow-inner my-2 space-y-3">
+              
+              <!-- Steering (Torso Lean) Gauge -->
+              <div>
+                <div class="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-cyan-900 mb-1">
+                  <span>Steering (Shoulder Lean)</span>
+                  <span id="rowing-lean-status" class="text-xs font-black text-cyan-800">Centered ⚓</span>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-white border border-cyan-200 text-center text-[10px] font-bold text-slate-600">
+                  <div id="lean-indicator-left" class="py-1 px-1 rounded-xl transition-all">← Lean Left</div>
+                  <div id="lean-indicator-center" class="py-1 px-1 rounded-xl bg-cyan-100 text-cyan-900 font-extrabold transition-all">Centered</div>
+                  <div id="lean-indicator-right" class="py-1 px-1 rounded-xl transition-all">Lean Right →</div>
+                </div>
+              </div>
+
+              <!-- Speed (Arm Rowing Motion) Gauge -->
+              <div>
+                <div class="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-cyan-900 mb-1">
+                  <span>Rowing Power (Wrist Motion)</span>
+                  <span id="rowing-speed-text" class="text-xs font-black text-cyan-800">Gentle Drift</span>
+                </div>
+                <div class="w-full h-3 rounded-full bg-slate-900/20 border border-cyan-300/40 overflow-hidden p-0.5">
+                  <div id="rowing-speed-bar" class="h-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-400 to-emerald-400 transition-all duration-150" style="width: 25%;"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Healthy Snacks Checklist (5 Snacks) -->
+            <div class="my-2">
+              <div class="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
+                <span>Healthy Foods Collected</span>
+                <span id="rowing-snacks-count-text" class="text-xs font-bold text-emerald-700">0 of 5</span>
+              </div>
+              <div id="rowing-snacks-slots-container" class="grid grid-cols-5 gap-1.5 text-center">
+                <div id="snack-slot-1" class="p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50">
+                  <span class="text-xl">🍎</span>
+                  <span class="text-[9px] font-black text-slate-600 mt-0.5">Apple</span>
+                </div>
+                <div id="snack-slot-2" class="p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50">
+                  <span class="text-xl">🥕</span>
+                  <span class="text-[9px] font-black text-slate-600 mt-0.5">Carrot</span>
+                </div>
+                <div id="snack-slot-3" class="p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50">
+                  <span class="text-xl">🍌</span>
+                  <span class="text-[9px] font-black text-slate-600 mt-0.5">Banana</span>
+                </div>
+                <div id="snack-slot-4" class="p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50">
+                  <span class="text-xl">🍓</span>
+                  <span class="text-[9px] font-black text-slate-600 mt-0.5">Berry</span>
+                </div>
+                <div id="snack-slot-5" class="p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50">
+                  <span class="text-xl">🍊</span>
+                  <span class="text-[9px] font-black text-slate-600 mt-0.5">Orange</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pro Tip -->
+            <div class="p-2.5 rounded-2xl bg-cyan-50 border border-cyan-200 text-xs text-cyan-900 flex items-center gap-2.5">
+              <span class="text-xl">💡</span>
+              <span><strong>Puppy Tip:</strong> Sit on the floor! Lean your upper body left and right to steer. Row your arms to go fast!</span>
+            </div>
+          </div>
+
+          <!-- Bottom Button -->
+          <div class="mt-3 pt-3 border-t border-stone-200">
+            <button id="btn-rowing-reset" class="w-full py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs border border-stone-200 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+              <span>🔄</span> Restart River Voyage
+            </button>
+          </div>
+        </div>
+
+        <!-- CATCH THE FALLING OBJECTS MODE VIEW (Left Card) -->
+        <div id="falling-mode-view" class="hidden flex flex-col justify-between h-full">
+          <div>
+            <!-- Header of Catch Card -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs uppercase font-extrabold tracking-widest text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                Sorting Game 🧺
+              </span>
+              <span id="falling-mission-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                0 / 5 Caught
+              </span>
+            </div>
+
+            <!-- Title & Emoji -->
+            <div class="flex items-center gap-3 mb-1">
+              <span class="text-3xl sm:text-4xl animate-bounce">🧺</span>
+              <h2 class="text-2xl sm:text-3xl font-black font-game text-slate-800">
+                Catch the Foods!
+              </h2>
+            </div>
+
+            <!-- Instructions -->
+            <p class="text-xs sm:text-sm text-slate-600 font-medium mb-3 leading-snug">
+              Step left and right in front of the camera! Move your body to slide your basket under falling green apples and carrots, but dodge the sweet junk food treats!
+            </p>
+
+            <!-- Real-Time Pose AR Basket Tracking Position Gauge -->
+            <div class="p-3.5 rounded-3xl bg-amber-50/70 border border-amber-200 shadow-inner my-2 space-y-3">
+              <div>
+                <div class="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-amber-900 mb-1">
+                  <span>Basket Tracking (Head / Body)</span>
+                  <span id="falling-tracking-status" class="text-xs font-black text-amber-800">Tracking Active 📍</span>
+                </div>
+                <!-- Interactive horizontal slider showing where child is standing -->
+                <div class="relative w-full h-4 rounded-full bg-stone-200/80 border border-amber-300/60 overflow-hidden">
+                  <div id="falling-position-indicator" class="absolute top-0 bottom-0 w-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 shadow-sm transition-all duration-75 flex items-center justify-center text-[9px] text-white font-bold" style="left: 45%;">
+                    🧺
+                  </div>
+                </div>
+                <div class="flex justify-between text-[10px] font-bold text-slate-500 mt-1">
+                  <span>← Left Side</span>
+                  <span>Center</span>
+                  <span>Right Side →</span>
+                </div>
+              </div>
+
+              <!-- Quick Sorting Rules Legend -->
+              <div class="grid grid-cols-2 gap-2 pt-1 border-t border-amber-200/70 text-left">
+                <div class="p-2 rounded-2xl bg-white border border-emerald-200 flex items-center gap-2">
+                  <span class="text-2xl">🍏</span>
+                  <div>
+                    <span class="text-[10px] font-black uppercase text-emerald-800 block">Healthy (+1)</span>
+                    <span class="text-[9px] text-slate-500">Apple, Carrot, Banana</span>
+                  </div>
+                </div>
+                <div class="p-2 rounded-2xl bg-white border border-rose-200 flex items-center gap-2">
+                  <span class="text-2xl">🍩</span>
+                  <div>
+                    <span class="text-[10px] font-black uppercase text-rose-800 block">Junk Food (Oops!)</span>
+                    <span class="text-[9px] text-slate-500">Donut, Lollipop, Fries</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Healthy Foods Caught Checklist (5 Slots) -->
+            <div class="my-2">
+              <div class="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
+                <span>Healthy Foods Basket</span>
+                <span id="falling-basket-count-text" class="text-xs font-bold text-emerald-700">0 of 5</span>
+              </div>
+              <div id="falling-slots-container" class="grid grid-cols-5 gap-1.5 text-center">
+                <div id="falling-slot-1" class="p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50">
+                  <span class="text-xl">🍏</span>
+                  <span class="text-[9px] font-black text-slate-600 mt-0.5">Apple</span>
+                </div>
+                <div id="falling-slot-2" class="p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50">
+                  <span class="text-xl">🥕</span>
+                  <span class="text-[9px] font-black text-slate-600 mt-0.5">Carrot</span>
+                </div>
+                <div id="falling-slot-3" class="p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50">
+                  <span class="text-xl">🍌</span>
+                  <span class="text-[9px] font-black text-slate-600 mt-0.5">Banana</span>
+                </div>
+                <div id="falling-slot-4" class="p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50">
+                  <span class="text-xl">🥦</span>
+                  <span class="text-[9px] font-black text-slate-600 mt-0.5">Broccoli</span>
+                </div>
+                <div id="falling-slot-5" class="p-1.5 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center transition-all opacity-50">
+                  <span class="text-xl">🍓</span>
+                  <span class="text-[9px] font-black text-slate-600 mt-0.5">Berry</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Puppy Tip -->
+            <div class="p-2.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center gap-2.5">
+              <span class="text-xl">💡</span>
+              <span><strong>Puppy Tip:</strong> Take big steps left and right in the room! Your basket follows your body across the screen!</span>
+            </div>
+          </div>
+
+          <!-- Bottom Button -->
+          <div class="mt-3 pt-3 border-t border-stone-200">
+            <button id="btn-falling-reset" class="w-full py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-slate-700 font-bold text-xs border border-stone-200 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+              <span>🔄</span> Restart Catching Game
             </button>
           </div>
         </div>
@@ -1117,10 +1463,19 @@
                     </button>
                   </div>
 
-                  <!-- Required Back to Menu Button -->
-                  <button id="btn-art-back-menu" class="w-full mt-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black font-game text-sm shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2">
-                    <span>🌿</span> Back to Menu
-                  </button>
+                  <!-- CHEERFUL VICTORY BANNER WITH 5-SECOND ANIMATED CIRCULAR TIMER -->
+                  <div class="mt-3 p-3.5 rounded-2xl bg-blue-50/90 border-2 border-blue-200/90 shadow-sm flex flex-col items-center justify-center">
+                    <div class="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center mb-1.5">
+                      <svg class="w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(191, 219, 254, 0.6)" stroke-width="8" />
+                        <circle id="art-circular-ring" cx="50" cy="50" r="40" fill="none" stroke="#3b82f6" stroke-width="8" stroke-linecap="round" stroke-dasharray="251.33" stroke-dashoffset="0" class="transition-all duration-75" />
+                      </svg>
+                      <span id="art-auto-countdown" class="absolute text-xl sm:text-2xl font-black font-game text-blue-900">5</span>
+                    </div>
+                    <p class="text-xs font-black font-game text-blue-900 tracking-wide flex items-center gap-1">
+                      <span>🌿</span> Returning to Playground in <span id="art-circular-sec">5</span>s...
+                    </p>
+                  </div>
                 </div>
 
               </div>
@@ -1240,13 +1595,265 @@
                   <span>+20 Energy Coins Earned!</span>
                 </div>
 
-                <!-- Buttons: Build Again & Back to Menu -->
-                <div class="grid grid-cols-2 gap-3">
-                  <button id="btn-builder-replay" class="py-3 px-4 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-black font-game text-xs sm:text-sm border border-indigo-200 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                <!-- CHEERFUL VICTORY BANNER WITH 5-SECOND ANIMATED CIRCULAR TIMER -->
+                <div class="p-3.5 rounded-2xl bg-indigo-50/90 border-2 border-indigo-200/90 shadow-sm flex flex-col items-center justify-center mb-3">
+                  <div class="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center mb-1.5">
+                    <svg class="w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(199, 210, 254, 0.6)" stroke-width="8" />
+                      <circle id="builder-circular-ring" cx="50" cy="50" r="40" fill="none" stroke="#6366f1" stroke-width="8" stroke-linecap="round" stroke-dasharray="251.33" stroke-dashoffset="0" class="transition-all duration-75" />
+                    </svg>
+                    <span id="builder-auto-countdown" class="absolute text-xl sm:text-2xl font-black font-game text-indigo-900">5</span>
+                  </div>
+                  <p class="text-xs font-black font-game text-indigo-900 tracking-wide flex items-center gap-1">
+                    <span>🌿</span> Returning to Playground in <span id="builder-circular-sec">5</span>s...
+                  </p>
+                </div>
+
+                <!-- Buttons: Build Again -->
+                <div>
+                  <button id="btn-builder-replay" class="w-full py-3 px-4 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-black font-game text-xs sm:text-sm border border-indigo-200 transition-all hover:scale-105 active:scale-95 cursor-pointer">
                     🔄 Build Again
                   </button>
-                  <button id="btn-builder-back-menu" class="py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black font-game text-xs sm:text-sm shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer">
-                    🌿 Back to Menu
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ============================================== -->
+          <!-- ACTIVITY 4: THE MAGIC ROWING BOAT OVERLAY      -->
+          <!-- ============================================== -->
+          <div id="rowing-game-overlay" class="absolute inset-0 hidden pointer-events-auto z-30 select-none overflow-hidden river-water-bg">
+            
+            <!-- Left Riverbank (Soft Green Shore with Reeds & Plants) -->
+            <div class="absolute left-0 top-0 bottom-0 w-8 sm:w-12 bg-emerald-100/85 border-r-2 border-emerald-300/80 flex flex-col justify-around items-center py-4 z-20 pointer-events-none shadow-sm">
+              <span class="text-base select-none">🌾</span>
+              <span class="text-base select-none">🌿</span>
+              <span class="text-base select-none">🌱</span>
+              <span class="text-base select-none">🌾</span>
+              <span class="text-base select-none">🌿</span>
+            </div>
+
+            <!-- Right Riverbank (Soft Green Shore with Reeds & Plants) -->
+            <div class="absolute right-0 top-0 bottom-0 w-8 sm:w-12 bg-emerald-100/85 border-l-2 border-emerald-300/80 flex flex-col justify-around items-center py-4 z-20 pointer-events-none shadow-sm">
+              <span class="text-base select-none">🌾</span>
+              <span class="text-base select-none">🌱</span>
+              <span class="text-base select-none">🌿</span>
+              <span class="text-base select-none">🌾</span>
+              <span class="text-base select-none">🌱</span>
+            </div>
+
+            <!-- Top Guidance Banner -->
+            <div class="absolute top-2.5 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white/95 border border-cyan-200 shadow-md flex items-center gap-2 text-xs font-black font-game text-cyan-950 z-30 pointer-events-none">
+              <span class="text-base animate-bounce">🚣</span>
+              <span id="rowing-top-hint">Row your arms to paddle forward! Lean your body to steer!</span>
+            </div>
+
+            <!-- Water Currents & Ripples Layer -->
+            <div id="rowing-ripples-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+            <!-- River Entities Layer (Rocks & Healthy Foods) -->
+            <div id="rowing-entities-container" class="absolute inset-0 pointer-events-none z-20 overflow-hidden"></div>
+
+            <!-- Floating Text & Splash Effects Layer -->
+            <div id="rowing-effects-container" class="absolute inset-0 pointer-events-none z-30 overflow-hidden"></div>
+
+            <!-- Top-Down View of Simple Soft-Brown Wooden Boat -->
+            <div id="rowing-boat" class="absolute w-20 h-28 sm:w-24 sm:h-32 -translate-x-1/2 -translate-y-1/2 z-25 transition-transform duration-75 pointer-events-none" style="left: 50%; top: 72%;">
+              <!-- Soft water wake / froth trailing behind the boat -->
+              <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 w-16 h-8 rounded-full bg-white/40 blur-[2px] water-ripple-pulse"></div>
+              <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 w-20 h-6 rounded-full bg-cyan-200/50 blur-[3px]"></div>
+              
+              <!-- Wooden Boat SVG Hull -->
+              <svg viewBox="0 0 100 140" class="w-full h-full drop-shadow-[0_8px_16px_rgba(0,0,0,0.25)]">
+                <!-- Outer Hull (Curved Wooden Boat) -->
+                <path d="M 50,4 C 68,20 84,55 84,105 C 84,128 68,136 50,136 C 32,136 16,128 16,105 C 16,55 32,20 50,4 Z" fill="#854d0e" stroke="#5b2f0b" stroke-width="3.5" />
+                <!-- Inner Boat Planking / Floor -->
+                <path d="M 50,14 C 64,28 76,58 76,102 C 76,122 64,128 50,128 C 36,128 24,122 24,102 C 24,58 36,28 50,14 Z" fill="#a16207" stroke="#713f12" stroke-width="2" />
+                <!-- Wood Plank Ribs -->
+                <line x1="28" y1="52" x2="72" y2="52" stroke="#713f12" stroke-width="2" />
+                <line x1="26" y1="80" x2="74" y2="80" stroke="#713f12" stroke-width="2" />
+                <line x1="30" y1="108" x2="70" y2="108" stroke="#713f12" stroke-width="2" />
+                
+                <!-- Seating Benches -->
+                <rect x="29" y="48" width="42" height="7" rx="2" fill="#ca8a04" stroke="#713f12" stroke-width="1.5" />
+                <rect x="28" y="78" width="44" height="7" rx="2" fill="#ca8a04" stroke="#713f12" stroke-width="1.5" />
+
+                <!-- Cute Puppy Voyager / Sailor in middle seat -->
+                <g transform="translate(50, 78)">
+                  <!-- Puppy ears -->
+                  <ellipse cx="-11" cy="-14" rx="5" ry="9" fill="#78350f" transform="rotate(-15 -11 -14)" />
+                  <ellipse cx="11" cy="-14" rx="5" ry="9" fill="#78350f" transform="rotate(15 11 -14)" />
+                  <!-- Head -->
+                  <circle cx="0" cy="-12" r="12" fill="#d97706" stroke="#92400e" stroke-width="1.5" />
+                  <!-- Puppy Muzzle -->
+                  <ellipse cx="0" cy="-9" rx="6" ry="4" fill="#fef3c7" />
+                  <circle cx="0" cy="-10.5" r="2" fill="#1e293b" />
+                  <!-- Eyes -->
+                  <circle cx="-4" cy="-14" r="1.5" fill="#1e293b" />
+                  <circle cx="4" cy="-14" r="1.5" fill="#1e293b" />
+                </g>
+              </svg>
+
+              <!-- Left Oar -->
+              <div id="rowing-oar-left" class="absolute top-[48%] -left-6 sm:-left-8 w-10 sm:w-12 h-3.5 origin-right transition-transform pointer-events-none">
+                <div class="w-full h-1.5 bg-amber-700 rounded-full border border-amber-900 mt-1"></div>
+                <div class="absolute left-0 top-0 w-4 h-3.5 bg-amber-600 rounded-lg border border-amber-900"></div>
+              </div>
+
+              <!-- Right Oar -->
+              <div id="rowing-oar-right" class="absolute top-[48%] -right-6 sm:-right-8 w-10 sm:w-12 h-3.5 origin-left transition-transform pointer-events-none">
+                <div class="w-full h-1.5 bg-amber-700 rounded-full border border-amber-900 mt-1"></div>
+                <div class="absolute right-0 top-0 w-4 h-3.5 bg-amber-600 rounded-lg border border-amber-900"></div>
+              </div>
+            </div>
+
+            <!-- Win Celebration Modal (Collected 5 snacks + Puppy Cheer + 20 Coins) -->
+            <div id="rowing-win-card" class="absolute inset-0 flex flex-col items-center justify-center p-4 bg-stone-900/65 backdrop-blur-md z-40 hidden">
+              <div class="bounce-in max-w-sm sm:max-w-md w-full rounded-3xl bg-white p-6 sm:p-8 text-center border-4 border-cyan-200 shadow-2xl">
+                <div class="text-6xl mb-2 animate-bounce">🚣🧺✨</div>
+                <h3 class="text-2xl sm:text-3xl font-black font-game text-slate-800 mb-1">
+                  Paw-some Rowing!
+                </h3>
+                <p id="rowing-puppy-quote" class="text-xs sm:text-sm font-black font-game text-cyan-800 mb-3">
+                  "Paw-some rowing! We got all the snacks!"
+                </p>
+
+                <!-- Coins Reward Badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 font-black font-game text-sm shadow-sm mb-4">
+                  <span class="text-2xl animate-spin" style="animation-duration: 3s;">🪙</span>
+                  <span>+20 Energy Coins Earned!</span>
+                </div>
+
+                <!-- CHEERFUL VICTORY BANNER WITH 5-SECOND ANIMATED CIRCULAR TIMER -->
+                <div class="p-3.5 rounded-2xl bg-cyan-50/90 border-2 border-cyan-200/90 shadow-sm flex flex-col items-center justify-center mb-3">
+                  <div class="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center mb-1.5">
+                    <svg class="w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(165, 243, 252, 0.6)" stroke-width="8" />
+                      <circle id="rowing-circular-ring" cx="50" cy="50" r="40" fill="none" stroke="#06b6d4" stroke-width="8" stroke-linecap="round" stroke-dasharray="251.33" stroke-dashoffset="0" class="transition-all duration-75" />
+                    </svg>
+                    <span id="rowing-auto-countdown" class="absolute text-xl sm:text-2xl font-black font-game text-cyan-900">5</span>
+                  </div>
+                  <p class="text-xs font-black font-game text-cyan-900 tracking-wide flex items-center gap-1">
+                    <span>🌿</span> Returning to Playground in <span id="rowing-circular-sec">5</span>s...
+                  </p>
+                </div>
+
+                <!-- Buttons: Row Again -->
+                <div>
+                  <button id="btn-rowing-replay" class="w-full py-3 px-4 rounded-2xl bg-cyan-50 hover:bg-cyan-100 text-cyan-900 font-black font-game text-xs sm:text-sm border border-cyan-200 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                    🔄 Row Again
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ============================================== -->
+          <!-- CATCH THE FALLING OBJECTS OVERLAY               -->
+          <!-- ============================================== -->
+          <div id="falling-game-overlay" class="absolute inset-0 hidden pointer-events-auto z-30 select-none overflow-hidden bg-gradient-to-b from-amber-50/70 via-orange-50/40 to-amber-100/60 backdrop-blur-[1px]">
+            <!-- Top In-Game Header / Guidance Banner -->
+            <div class="absolute top-3 left-3 right-3 flex items-center justify-between z-20 pointer-events-none">
+              <div class="px-3.5 py-1.5 rounded-2xl bg-white/95 border border-amber-200 shadow-md backdrop-blur-md flex items-center gap-2">
+                <span class="text-xl animate-bounce">🧺</span>
+                <div>
+                  <div class="text-[10px] uppercase font-black text-amber-800 tracking-wider">Catch Healthy Foods</div>
+                  <div id="falling-overlay-score" class="text-xs font-black font-game text-slate-800">Caught: <span id="falling-overlay-count" class="text-emerald-600">0</span> / 5 🍏</div>
+                </div>
+              </div>
+
+              <div id="falling-status-banner" class="px-3 py-1.5 rounded-2xl bg-white/90 border border-amber-200 text-xs font-bold text-slate-700 shadow-sm backdrop-blur-md hidden sm:flex items-center gap-1.5">
+                <span>🏃</span>
+                <span id="falling-status-banner-text">Step left or right to move your basket!</span>
+              </div>
+
+              <div class="px-3 py-1.5 rounded-2xl bg-amber-500/90 text-white font-black font-game text-xs shadow-md border border-amber-300 flex items-center gap-1">
+                <span>🪙</span>
+                <span>Goal: 5 Foods</span>
+              </div>
+            </div>
+
+            <!-- Falling Objects Container -->
+            <div id="falling-objects-container" class="absolute inset-0 pointer-events-none overflow-hidden z-10">
+              <!-- Dynamically populated falling objects -->
+            </div>
+
+            <!-- Floating Popups & Sparkles Container -->
+            <div id="falling-effects-container" class="absolute inset-0 pointer-events-none overflow-hidden z-20">
+              <!-- Catch splashes, pops, Oops text -->
+            </div>
+
+            <!-- Head/Body Position Dot & Tracker Guide -->
+            <div id="falling-head-tracker" class="absolute top-2 w-8 h-8 rounded-full border-2 border-dashed border-amber-400 bg-amber-200/40 pointer-events-none transition-all duration-75 flex items-center justify-center text-xs opacity-75 z-10 -translate-x-1/2" style="left: 50%;">
+              📍
+            </div>
+
+            <!-- Virtual AR Basket (Follows Nose / Shoulder Midpoint horizontally) -->
+            <div id="falling-basket" class="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 w-28 sm:w-36 h-20 sm:h-24 pointer-events-none z-20 transition-transform duration-75 origin-bottom">
+              <!-- Catching aura / basket rim glow -->
+              <div class="absolute -inset-2 bg-gradient-to-t from-amber-400/20 via-orange-400/10 to-transparent rounded-3xl blur-sm pointer-events-none"></div>
+
+              <!-- Inner Basket Container (receives .basket-catch-pop and .basket-oops-shake animations) -->
+              <div id="falling-basket-inner" class="relative w-full h-full flex flex-col items-center justify-end origin-bottom transition-all">
+                <!-- Basket Rim (where collision happens) -->
+                <div id="falling-basket-rim" class="w-full h-4 sm:h-5 rounded-full bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 border-2 border-amber-900 shadow-md flex items-center justify-center z-10">
+                  <div class="w-3/4 h-1.5 bg-amber-800/80 rounded-full"></div>
+                </div>
+
+                <!-- Basket Body (woven wicker texture) -->
+                <div class="w-[88%] h-14 sm:h-16 -mt-2 rounded-b-3xl bg-gradient-to-b from-amber-600 to-amber-800 border-2 border-amber-900 shadow-lg relative overflow-hidden flex items-center justify-center">
+                  <!-- Woven pattern criss-cross lines -->
+                  <div class="absolute inset-0 opacity-25 bg-[radial-gradient(#fed7aa_1px,transparent_1px)] [background-size:8px_8px]"></div>
+                  <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-amber-900/60"></div>
+                  <div class="absolute top-1/4 left-0 right-0 h-0.5 bg-amber-900/40"></div>
+                  <div class="absolute top-3/4 left-0 right-0 h-0.5 bg-amber-900/40"></div>
+                  <div class="text-xl sm:text-2xl select-none z-10 filter drop-shadow">🧺</div>
+                </div>
+
+                <!-- Cute Basket Label -->
+                <div class="absolute -bottom-3 px-2 py-0.5 rounded-full bg-stone-900/80 text-amber-200 text-[9px] font-black tracking-wide border border-amber-400/60 shadow">
+                  MY BASKET
+                </div>
+              </div>
+            </div>
+
+            <!-- Win Celebration Modal (Collected 5 healthy foods + Puppy Cheer + 20 Coins) -->
+            <div id="falling-win-card" class="absolute inset-0 flex flex-col items-center justify-center p-4 bg-stone-900/65 backdrop-blur-md z-40 hidden">
+              <div class="bounce-in max-w-sm sm:max-w-md w-full rounded-3xl bg-white p-6 sm:p-8 text-center border-4 border-amber-200 shadow-2xl">
+                <div class="text-6xl mb-2 animate-bounce">🧺🍏✨</div>
+                <h3 class="text-2xl sm:text-3xl font-black font-game text-slate-800 mb-1">
+                  Paw-some Catching!
+                </h3>
+                <p id="falling-puppy-quote" class="text-xs sm:text-sm font-black font-game text-amber-800 mb-3">
+                  "Paw-some catching! You are so fast!"
+                </p>
+
+                <!-- Coins Reward Badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 font-black font-game text-sm shadow-sm mb-4">
+                  <span class="text-2xl animate-spin" style="animation-duration: 3s;">🪙</span>
+                  <span>+20 Energy Coins Earned!</span>
+                </div>
+
+                <!-- CHEERFUL VICTORY BANNER WITH 5-SECOND ANIMATED CIRCULAR TIMER -->
+                <div class="p-3.5 rounded-2xl bg-amber-50/90 border-2 border-amber-200/90 shadow-sm flex flex-col items-center justify-center mb-3">
+                  <div class="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center mb-1.5">
+                    <svg class="w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(254, 215, 170, 0.6)" stroke-width="8" />
+                      <circle id="falling-circular-ring" cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="8" stroke-linecap="round" stroke-dasharray="251.33" stroke-dashoffset="0" class="transition-all duration-75" />
+                    </svg>
+                    <span id="falling-auto-countdown" class="absolute text-xl sm:text-2xl font-black font-game text-amber-900">5</span>
+                  </div>
+                  <p class="text-xs font-black font-game text-amber-900 tracking-wide flex items-center gap-1">
+                    <span>🌿</span> Returning to Playground in <span id="falling-circular-sec">5</span>s...
+                  </p>
+                </div>
+
+                <!-- Buttons: Catch Again -->
+                <div>
+                  <button id="btn-falling-replay" class="w-full py-3 px-4 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-black font-game text-xs sm:text-sm border border-amber-200 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                    🔄 Catch Again
                   </button>
                 </div>
               </div>
@@ -1310,16 +1917,21 @@
         </div>
       </div>
 
-      <div class="text-xs font-bold text-slate-500 animate-pulse mb-4">
-        Restarting dance loop in <span id="auto-restart-countdown">3</span>s...
+      <!-- CHEERFUL VICTORY BANNER WITH 5-SECOND ANIMATED CIRCULAR TIMER -->
+      <div class="my-3 p-4 rounded-3xl bg-amber-50/90 border-2 border-amber-200/90 shadow-sm flex flex-col items-center justify-center">
+        <div class="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mb-2">
+          <svg class="w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(251, 191, 36, 0.25)" stroke-width="8" />
+            <circle id="celebration-circular-ring" cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="8" stroke-linecap="round" stroke-dasharray="251.33" stroke-dashoffset="0" class="transition-all duration-75" />
+          </svg>
+          <span id="auto-restart-countdown" class="absolute text-2xl sm:text-3xl font-black font-game text-amber-900">5</span>
+        </div>
+        <p class="text-xs sm:text-sm font-black font-game text-amber-900 tracking-wide flex items-center gap-1.5">
+          <span>🌿</span> Returning to Playground in <span id="celebration-circular-sec">5</span>s...
+        </p>
       </div>
 
-      <!-- Action Button -->
-      <div>
-        <button id="next-round-btn" class="w-full py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black font-game text-base shadow-md hover:scale-105 active:scale-95 transition-all">
-          Jump Back In! ➔
-        </button>
-      </div>
+      <button id="next-round-btn" class="hidden"></button>
     </div>
   </div>
 
